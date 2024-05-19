@@ -17,7 +17,8 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * struct comms_request {
  *     enum {
  *         COMMS_REQ_UNICAST,
- *         COMMS_REQ_BROADCAST
+ *         COMMS_REQ_BROADCAST,
+ *         COMMS_REQ_HELLO
  *     } type;
  *     mac_address_t recipient;
  *     uint32_t message_size;
@@ -53,7 +54,8 @@ class comms_request {
      * {@snippet lang=c :
      * enum {
      *     COMMS_REQ_UNICAST,
-     *     COMMS_REQ_BROADCAST
+     *     COMMS_REQ_BROADCAST,
+     *     COMMS_REQ_HELLO
      * } type
      * }
      */
@@ -68,7 +70,8 @@ class comms_request {
      * {@snippet lang=c :
      * enum {
      *     COMMS_REQ_UNICAST,
-     *     COMMS_REQ_BROADCAST
+     *     COMMS_REQ_BROADCAST,
+     *     COMMS_REQ_HELLO
      * } type
      * }
      */
@@ -81,7 +84,8 @@ class comms_request {
      * {@snippet lang=c :
      * enum {
      *     COMMS_REQ_UNICAST,
-     *     COMMS_REQ_BROADCAST
+     *     COMMS_REQ_BROADCAST,
+     *     COMMS_REQ_HELLO
      * } type
      * }
      */
@@ -94,7 +98,8 @@ class comms_request {
      * {@snippet lang=c :
      * enum {
      *     COMMS_REQ_UNICAST,
-     *     COMMS_REQ_BROADCAST
+     *     COMMS_REQ_BROADCAST,
+     *     COMMS_REQ_HELLO
      * } type
      * }
      */

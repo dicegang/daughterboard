@@ -72,5 +72,14 @@ class comms_h {
     public static int COMMS_REQ_BROADCAST() {
         return COMMS_REQ_BROADCAST;
     }
+    static final int COMMS_REQ_HELLO = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.COMMS_REQ_HELLO = 2
+     * }
+     */
+    public static int COMMS_REQ_HELLO() {
+        return COMMS_REQ_HELLO;
+    }
 }
 

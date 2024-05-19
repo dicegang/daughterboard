@@ -153,7 +153,7 @@ class comms_response {
             MemoryLayout.paddingLayout(2),
             comms_h.C_INT.withName("message_size"),
             MemoryLayout.sequenceLayout(0, comms_h.C_CHAR).withName("message")
-        ).withName("$anon$20:5");
+        ).withName("$anon$21:5");
 
         /**
          * The layout of this struct

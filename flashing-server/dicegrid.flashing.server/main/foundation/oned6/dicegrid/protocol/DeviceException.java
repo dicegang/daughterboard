@@ -1,11 +1,5 @@
 package foundation.oned6.dicegrid.protocol;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
-import static foundation.oned6.dicegrid.protocol.protocol_h.*;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-
 public abstract sealed class DeviceException extends Exception {
 	public final byte[] deviceMAC;
 
