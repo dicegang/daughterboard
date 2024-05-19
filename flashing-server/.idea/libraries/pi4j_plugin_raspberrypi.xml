@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="pi4j-plugin-raspberrypi">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/pi4j-2.6.0/lib/pi4j-plugin-raspberrypi.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
