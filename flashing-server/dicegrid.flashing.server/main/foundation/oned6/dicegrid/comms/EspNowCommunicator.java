@@ -2,13 +2,15 @@ package foundation.oned6.dicegrid.comms;
 
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
-import com.pi4j.io.gpio.digital.*;
+import com.pi4j.io.gpio.digital.DigitalInput;
+import com.pi4j.io.gpio.digital.DigitalState;
+import com.pi4j.io.gpio.digital.DigitalStateChangeEvent;
+import com.pi4j.io.gpio.digital.DigitalStateChangeListener;
 import com.pi4j.io.spi.Spi;
 import com.pi4j.io.spi.SpiConfigBuilder;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -28,21 +30,17 @@ public class EspNowCommunicator {
 	private final System.Logger logger = System.getLogger(EspNowCommunicator.class.getSimpleName());
 	private final Spi spi;
 
-	private final DigitalOutput handshakeMOSI;
 	private final DigitalInput handshakeMISO;
 
 	private final ReentrantLock lock = new ReentrantLock();
 
 	public EspNowCommunicator() {
-		this.handshakeMOSI = context.dout().create(MOSI_HANDSHAKE_GPIO);
 		this.handshakeMISO = context.din().create(MISO_HANDSHAKE_GPIO);
 
-		handshakeMOSI.low();
-
 		var spiConfig = SpiConfigBuilder.newInstance(context)
-				.baud(CLOCK_SPEED)
-				.bus(SLAVE_BUS)
-				.chipSelect(SS).build();
+			.baud(CLOCK_SPEED)
+			.bus(SLAVE_BUS)
+			.chipSelect(SS).build();
 
 		this.spi = context.spi().create(spiConfig);
 		spi.open();
@@ -65,13 +63,13 @@ public class EspNowCommunicator {
 	private ReceivedMessage[] send(int messageType, byte[] deviceMAC, MemorySegment data) throws InterruptedException {
 		lock.lockInterruptibly();
 
-		var handshakeMISOEvents  = new ArrayBlockingQueue<DigitalStateChangeEvent<?>>(5);
+		var handshakeMISOEvents = new ArrayBlockingQueue<DigitalStateChangeEvent<?>>(5);
 		DigitalStateChangeListener listener = handshakeMISOEvents::add;
 		handshakeMISO.addListener(listener);
 
 		try (var arena = Arena.ofConfined()) {
 			if (handshakeMISO.isOn()) {
-				var event = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+				var event = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS); // give it a chance to go low
 				if (event == null)
 					throw new IllegalStateException("handshake MISO is high when it shouldnt be");
 			}
@@ -87,12 +85,15 @@ public class EspNowCommunicator {
 			comms_request.recipient(txBuf, MemorySegment.ofArray(deviceMAC));
 			comms_request.message_size(txBuf, (int) data.byteSize());
 
-			writeWithHandshake(txBuf.asByteBuffer(), data.asByteBuffer());
+			int result = spi.write(txBuf.asByteBuffer(), data.asByteBuffer());
+			assert result == txBuf.byteSize() + data.byteSize();
+
+			if (Thread.interrupted())
+				throw new InterruptedException();
 
 			var response = readWithHandshake(handshakeMISOEvents, arena);
 			return parseResponse(response);
 		} finally {
-			handshakeMOSI.low();
 			handshakeMISO.removeListener(listener);
 			lock.unlock();
 		}
@@ -127,21 +128,6 @@ public class EspNowCommunicator {
 			throw new InterruptedException();
 
 		return buffer;
-	}
-
-	private int writeWithHandshake(ByteBuffer... buffers) throws InterruptedException {
-		handshakeMOSI.high();
-		try {
-			Thread.sleep(5);
-			int result = spi.write(buffers);
-
-			if (Thread.interrupted())
-				throw new InterruptedException();
-
-			return result;
-		} finally {
-			handshakeMOSI.low();
-		}
 	}
 
 	private ReceivedMessage[] parseResponse(MemorySegment response) {
