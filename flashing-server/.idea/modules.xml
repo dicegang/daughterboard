@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/dicegrid.flashing.server/dicegrid.flashing.server.iml" filepath="$PROJECT_DIR$/dicegrid.flashing.server/dicegrid.flashing.server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dicegrid.flashing/dicegrid.flashing.iml" filepath="$PROJECT_DIR$/dicegrid.flashing/dicegrid.flashing.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dicegrid.server/dicegrid.server.iml" filepath="$PROJECT_DIR$/dicegrid.server/dicegrid.server.iml" />
       <module fileurl="file://$PROJECT_DIR$/flashing-server.iml" filepath="$PROJECT_DIR$/flashing-server.iml" />
     </modules>
   </component>

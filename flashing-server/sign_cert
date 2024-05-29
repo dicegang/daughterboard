@@ -1,0 +1,17 @@
+#!/bin/sh
+
+PAIR=$1
+PASS=$2
+ALIAS=$3
+
+CA_PEM=`mktemp`
+
+keytool -keystore ca.p12 -exportcert -storepass "$PASS" -alias ca -rfc > $CA_PEM
+
+CSR=`mktemp`
+CERT_PEM=`mktemp`
+keytool -storepass "$PASS" -keystore $PAIR -certreq -keyalg EC -alias $ALIAS > $CSR
+keytool -storepass "$PASS" -keystore ca.p12 -gencert -keyalg EC -alias ca -ext ku:c=dig,keyEncipherment -ext san=dns:localhost -rfc < $CSR > $CERT_PEM
+
+cat $CA_PEM $CERT_PEM > localhost_chain.pem
+keytool -keystore $PAIR -storepass "$PASS" -import -trustcacerts -file localhost_chain.pem -alias kp -rfc
