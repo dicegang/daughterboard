@@ -1,9 +1,8 @@
 package foundation.oned6.dicegrid.server.cp;
 
-import foundation.oned6.dicegrid.protocol.NodeInfo;
 import foundation.oned6.dicegrid.protocol.NodeState;
 import foundation.oned6.dicegrid.protocol.NodeType;
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
 import foundation.oned6.dicegrid.server.flash.FlashingHistoryEntry;
 import foundation.oned6.dicegrid.server.flash.FlashingHistoryView;
@@ -16,7 +15,6 @@ import foundation.oned6.dicegrid.server.view.View;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 import static foundation.oned6.dicegrid.server.Server.context;
 
@@ -89,8 +87,6 @@ public record ControlPanelView(UpdateView updateSchematic, SchematicListView sch
 					<div hx-get=%s hx-trigger="every 1s">
 						%s
 					</div>
-					<form id="source-controls" hx-post="/control?target=source" hx-target-*="previous .status"></form>
-					<form id="load-controls" hx-post="/control?target=load" hx-target-*="previous .status"></form>
 				</div>
 			</div>
 			""".formatted(updateSchematic.html(), schematicList.html(), flash.html(), programHistory.html(),
@@ -106,8 +102,8 @@ public record ControlPanelView(UpdateView updateSchematic, SchematicListView sch
 	public static ControlPanelView of(TeamPrincipal team, NodeState source, NodeState load, List<GridRepository.Schematic> schematics, List<GridRepository.FlashEvent> flashEvents) {
 		var teamID = team.teamID();
 		var table = new NodeDataTable(List.of(
-			NodeDataEntry.withButtons(team, NodeType.SOURCE, source, "source-controls"),
-			NodeDataEntry.withButtons(team, NodeType.LOAD, load, "load-controls")
+			NodeDataEntry.of(team, NodeType.SOURCE, source, true),
+			NodeDataEntry.of(team, NodeType.LOAD, load, true)
 		));
 		return new ControlPanelView(
 			new UpdateView("application/pdf", "Schematic PDF", "Update Schematic", URI.create("/update-schematic")),

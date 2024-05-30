@@ -17,6 +17,14 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * struct node_state {
  *     bool shutdown;
  *     bool engaged;
+ *     enum {
+ *         TRIP_REASON_NONE,
+ *         TRIP_REASON_OVERCURRENT,
+ *         TRIP_REASON_OVERVOLTAGE,
+ *         TRIP_REASON_ANGLE,
+ *         TRIP_REASON_THD,
+ *         TRIP_REASON_MANUAL
+ *     } trip_reason;
  *     double current_rms_inner;
  *     double current_rms_outer;
  *     double voltage_rms;
@@ -40,7 +48,8 @@ class node_state {
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
         protocol_h.C_BOOL.withName("shutdown"),
         protocol_h.C_BOOL.withName("engaged"),
-        MemoryLayout.paddingLayout(6),
+        MemoryLayout.paddingLayout(2),
+        protocol_h.C_INT.withName("trip_reason"),
         protocol_h.C_DOUBLE.withName("current_rms_inner"),
         protocol_h.C_DOUBLE.withName("current_rms_outer"),
         protocol_h.C_DOUBLE.withName("voltage_rms"),
@@ -147,6 +156,78 @@ class node_state {
      */
     public static void engaged(MemorySegment struct, boolean fieldValue) {
         struct.set(engaged$LAYOUT, engaged$OFFSET, fieldValue);
+    }
+
+    private static final OfInt trip_reason$LAYOUT = (OfInt)$LAYOUT.select(groupElement("trip_reason"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * enum {
+     *     TRIP_REASON_NONE,
+     *     TRIP_REASON_OVERCURRENT,
+     *     TRIP_REASON_OVERVOLTAGE,
+     *     TRIP_REASON_ANGLE,
+     *     TRIP_REASON_THD,
+     *     TRIP_REASON_MANUAL
+     * } trip_reason
+     * }
+     */
+    public static final OfInt trip_reason$layout() {
+        return trip_reason$LAYOUT;
+    }
+
+    private static final long trip_reason$OFFSET = 4;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * enum {
+     *     TRIP_REASON_NONE,
+     *     TRIP_REASON_OVERCURRENT,
+     *     TRIP_REASON_OVERVOLTAGE,
+     *     TRIP_REASON_ANGLE,
+     *     TRIP_REASON_THD,
+     *     TRIP_REASON_MANUAL
+     * } trip_reason
+     * }
+     */
+    public static final long trip_reason$offset() {
+        return trip_reason$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * enum {
+     *     TRIP_REASON_NONE,
+     *     TRIP_REASON_OVERCURRENT,
+     *     TRIP_REASON_OVERVOLTAGE,
+     *     TRIP_REASON_ANGLE,
+     *     TRIP_REASON_THD,
+     *     TRIP_REASON_MANUAL
+     * } trip_reason
+     * }
+     */
+    public static int trip_reason(MemorySegment struct) {
+        return struct.get(trip_reason$LAYOUT, trip_reason$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * enum {
+     *     TRIP_REASON_NONE,
+     *     TRIP_REASON_OVERCURRENT,
+     *     TRIP_REASON_OVERVOLTAGE,
+     *     TRIP_REASON_ANGLE,
+     *     TRIP_REASON_THD,
+     *     TRIP_REASON_MANUAL
+     * } trip_reason
+     * }
+     */
+    public static void trip_reason(MemorySegment struct, int fieldValue) {
+        struct.set(trip_reason$LAYOUT, trip_reason$OFFSET, fieldValue);
     }
 
     private static final OfDouble current_rms_inner$LAYOUT = (OfDouble)$LAYOUT.select(groupElement("current_rms_inner"));

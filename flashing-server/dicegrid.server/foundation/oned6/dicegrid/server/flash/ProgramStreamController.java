@@ -1,6 +1,6 @@
 package foundation.oned6.dicegrid.server.flash;
 
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.HTTPException;
 import foundation.oned6.dicegrid.server.controller.SSEController;
 
@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.SynchronousQueue;
 
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.BAD_REQUEST;
 import static foundation.oned6.dicegrid.server.HTTPUtils.tryParseInteger;

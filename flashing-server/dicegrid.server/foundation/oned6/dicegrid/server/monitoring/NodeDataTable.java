@@ -5,11 +5,8 @@ import foundation.oned6.dicegrid.protocol.NodeState;
 import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
 import foundation.oned6.dicegrid.server.view.View;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public record NodeDataTable(List<NodeDataEntry> entries) implements View {
 	@Override
@@ -44,6 +41,8 @@ public record NodeDataTable(List<NodeDataEntry> entries) implements View {
 						}
 					}
 				</style>
+				<form style="display: none" id="node-controls" hx-post="/control" hx-target="previous .status" hx-target-*="previous .status"></form>
+				
 				<table class="node-data-table" style="table-layout: auto; border: 1px solid black; border-collapse: collapse;">
 					<caption>Source/load info and measurements</caption>
 					%s
@@ -57,13 +56,14 @@ public record NodeDataTable(List<NodeDataEntry> entries) implements View {
 		return "Node Data";
 	}
 
-	public static NodeDataTable of(Map<TeamPrincipal, Map<NodeInfo, NodeState>> data) {
-		var entries = data.entrySet().stream()
-			.flatMap(e -> {
-				return e.getValue().entrySet().stream()
-					.map(entry -> NodeDataEntry.of(e.getKey(), entry.getKey().nodeType(), entry.getValue()));
-			})
-			.collect(Collectors.toList());
+	public static NodeDataTable of(Collection<NodeInfo> controllableNodes, Map<NodeInfo, TeamPrincipal> nodeOwners, Map<NodeInfo, NodeState> nodeStates) {
+		assert nodeOwners.keySet().equals(nodeStates.keySet());
+
+		var entries = new ArrayList<NodeDataEntry>();
+		for (var node : nodeStates.keySet()) {
+			var state = nodeStates.get(node);
+			entries.add(NodeDataEntry.of(nodeOwners.get(node), node.nodeType(), state, controllableNodes.contains(node)));
+		}
 
 		return new NodeDataTable(entries);
 	}

@@ -1,6 +1,6 @@
 package foundation.oned6.dicegrid.server.schematic;
 
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.HTTPException;
 import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
 import foundation.oned6.dicegrid.server.controller.SSEController;

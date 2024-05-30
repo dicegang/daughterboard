@@ -1,5 +1,7 @@
 package foundation.oned6.dicegrid.protocol;
 
+import java.lang.foreign.MemorySegment;
+
 public record NodeInfo(NodeAddress address, NodeType nodeType, int ownerID) {
 
 	@Override

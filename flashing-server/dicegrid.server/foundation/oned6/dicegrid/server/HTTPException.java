@@ -28,8 +28,11 @@ public class HTTPException extends Exception {
 		this.code = code;
 	}
 
-	public void addViewWrapper(Function<View, View> wrapper) {
-		viewWrapper = viewWrapper.andThen(wrapper);
+	public HTTPException withViewWrapper(Function<View, View> wrapper) {
+		var copy = new HTTPException(getMessage(), getCause(), code);
+		copy.setStackTrace(getStackTrace());
+		copy.viewWrapper = viewWrapper.andThen(wrapper);
+		return copy;
 	}
 
 	public View view() {
@@ -50,7 +53,8 @@ public class HTTPException extends Exception {
 		TOO_MANY_REQUESTS(429, "Too Many Requests"),
 		METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
 		BAD_REQUEST(400, "Bad Request"),
-		INTERNAL_SERVER_ERROR(500, "Internal Server Error");
+		INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
+		NOT_IMPLEMENTED(501, "Not Implemented");
 
 		public final int code;
 		public final String message;

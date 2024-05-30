@@ -1,9 +1,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define CHUNK_SIZE 128
+
 struct node_state {
     bool shutdown;
     bool engaged;
+
+    enum {
+    	TRIP_REASON_NONE,
+    	TRIP_REASON_OVERCURRENT,
+    	TRIP_REASON_OVERVOLTAGE,
+    	TRIP_REASON_ANGLE,
+    	TRIP_REASON_THD,
+    	TRIP_REASON_MANUAL
+    } trip_reason;
 
     double current_rms_inner;
     double current_rms_outer;
@@ -26,7 +37,21 @@ struct node_info {
         NODE_TYPE_SOURCE,
         NODE_TYPE_LOAD
     } type;
+    uint8_t node_id;
     uint8_t owner_id;
+};
+
+struct bitbang_spi_config {
+	uint8_t rst, clk, mosi, miso;
+	uint32_t clock_rate;
+};
+
+struct node_configuration {
+	struct {
+		bool connected;
+		struct bitbang_spi_config spi_config;
+		struct node_info info;
+	} busses[2][2];
 };
 
 struct device_info {
@@ -34,21 +59,36 @@ struct device_info {
     struct node_info nodes[];
 };
 
+enum message_type {
+	FLASH_BEGIN,
+	FLASH_DATA,
+	FLASH_DATA_END,
+	CONFIGURE_SHUTDOWN,
+	CONFIGURE_ENGAGEMENT,
+	NODE_STATE,
+	SCAN,
+	SET_NODE_INFO
+};
+
 struct request_msg {
-    enum {
-        REQ_FLASH_ATTINY,
-        REQ_CONFIGURE_SHUTDOWN,
-        REQ_CONFIGURE_ENGAGEMENT,
-        REQ_NODE_STATE,
-        REQ_SCAN
-    } type;
+    enum message_type type;
 
     union {
         struct {
             uint8_t node_id;
-            uint16_t size;
-            uint8_t rom[];
-        } flash_attiny;
+            uint16_t total_size;
+            uint8_t total_chunks;
+        } flash_begin;
+
+        struct {
+        	uint8_t chunk_idx;
+        	uint8_t crc;
+        	uint8_t data[CHUNK_SIZE];
+        } flash_data;
+
+        struct {
+            uint32_t crc;
+        } flash_data_end;
 
         struct {
             uint8_t node_id;
@@ -60,29 +100,33 @@ struct request_msg {
             bool engaged;
         } configure_engagement;
 
-        struct {} scan;
+        struct {
+        	bool include_states;
+        } scan;
 
         struct {
             uint8_t node_id;
         } node_state;
+
+		struct node_configuration set_node_info;
     };
 };
 
 struct response_msg {
-    enum {
-        RES_FLASH_ATTINY,
-        RES_CONFIGURE_SHUTDOWN,
-        RES_CONFIGURE_ENGAGEMENT,
-        RES_SCAN,
-        RES_NODE_STATE
-    } type;
+    enum message_type type;
     bool ok;
 
     union {
-        struct {} flash_attiny;
+        struct {} flash_begin;
+        struct {} flash_data;
+        struct {} flash_data_end;
         struct {} configure_shutdown;
         struct {} configure_engagement;
         struct device_info scan;
-        struct node_state node_state;
+        struct {
+        	struct node_info info;
+        	struct node_state state;
+        } info_and_state;
+		struct {} set_node_info;
     };
 };

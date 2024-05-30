@@ -37,7 +37,7 @@ public abstract class ViewController implements Controller {
 
 			exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
 		} catch (HTTPException e) {
-			e.addViewWrapper(this::wrapView);
+			e.withViewWrapper(this::wrapView);
 			handleHttpException(exchange, e);
 			return;
 		} catch (Exception e) {

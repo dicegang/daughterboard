@@ -17,4 +17,18 @@ public interface View {
 			}
 		};
 	}
+
+	static View hypertext(String hypertext) {
+		return new View() {
+			@Override
+			public String html() {
+				return hypertext;
+			}
+
+			@Override
+			public String title() {
+				return "";
+			}
+		};
+	}
 }

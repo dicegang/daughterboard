@@ -26,7 +26,7 @@ dicegrid.flashing/gen/foundation/oned6/dicegrid/comms: comms.h
 dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol: protocol.h
 	jextract $^ --output dicegrid.flashing/gen --target-package foundation.oned6.dicegrid.protocol \
 				--include-struct device_measurements --include-struct node_info --include-struct device_info \
-				--include-struct node_state --include-struct request_msg --include-struct response_msg
+				--include-struct node_state --include-struct request_msg --include-struct response_msg --include-constant CHUNK_SIZE
 
 clean:
 	rm -rf out/

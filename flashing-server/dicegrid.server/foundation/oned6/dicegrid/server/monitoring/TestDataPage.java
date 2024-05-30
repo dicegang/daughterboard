@@ -76,7 +76,7 @@ public record TestDataPage() implements View {
 				Optional.ofNullable(faultReason)
 			);
 
-			result.add( NodeDataEntry.of(name, NodeType.values()[i % 2], state));
+			result.add( NodeDataEntry.of(name, NodeType.values()[i % 2], state, true));
 		}
 
 		return result;

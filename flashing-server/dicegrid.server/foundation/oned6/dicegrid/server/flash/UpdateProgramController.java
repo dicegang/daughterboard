@@ -5,18 +5,20 @@ import foundation.oned6.dicegrid.protocol.GridConnection;
 import foundation.oned6.dicegrid.protocol.NodeInfo;
 import foundation.oned6.dicegrid.protocol.NodeType;
 import foundation.oned6.dicegrid.server.*;
+import foundation.oned6.dicegrid.server.auth.AdminPrincipal;
+import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
 import foundation.oned6.dicegrid.server.controller.HypertextResponseController;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.view.StatusMessageView;
 import foundation.oned6.dicegrid.server.view.View;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import static foundation.oned6.dicegrid.server.GridRepository.FlashEvent.Status.*;
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.*;
-import static foundation.oned6.dicegrid.server.HTTPUtils.requireAuthentication;
+import static foundation.oned6.dicegrid.server.HTTPUtils.currentIdentity;
+import static foundation.oned6.dicegrid.server.repository.GridRepository.FlashEvent.Status.*;
 import static foundation.oned6.dicegrid.server.view.StatusMessageView.Status.SUCCESS;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -55,7 +57,11 @@ public class UpdateProgramController extends HypertextResponseController {
 	}
 
 	private void updateProgram(FormBody body) throws InterruptedException, HTTPException {
-		var me = requireAuthentication();
+		var me = switch (currentIdentity()) {
+			case TeamPrincipal tp -> tp;
+			case AdminPrincipal _ -> throw HTTPException.withMessage("admin doesn't have devices to flash (you need to masquerade)", NOT_FOUND);
+			case null -> throw HTTPException.of(UNAUTHORISED);
+		};
 
 		var target = switch (body.getString("target").map(String::trim).orElse(null)) {
 			case "Source" -> NodeType.SOURCE;

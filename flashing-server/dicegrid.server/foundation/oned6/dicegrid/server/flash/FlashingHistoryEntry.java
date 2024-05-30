@@ -1,14 +1,14 @@
 package foundation.oned6.dicegrid.server.flash;
 
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.view.View;
 
 import java.net.URI;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
-import static foundation.oned6.dicegrid.server.GridRepository.FlashEvent.Status.BUILDING;
-import static foundation.oned6.dicegrid.server.GridRepository.FlashEvent.Status.QUEUED;
+import static foundation.oned6.dicegrid.server.repository.GridRepository.FlashEvent.Status.BUILDING;
+import static foundation.oned6.dicegrid.server.repository.GridRepository.FlashEvent.Status.QUEUED;
 import static foundation.oned6.dicegrid.server.Server.CONTEXT;
 
 public record FlashingHistoryEntry(boolean isInner, GridRepository.FlashEvent event) implements View {

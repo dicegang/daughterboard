@@ -1,8 +1,7 @@
 package foundation.oned6.dicegrid.server;
 
 import com.sun.net.httpserver.HttpsExchange;
-import foundation.oned6.dicegrid.server.auth.AdminPrincipal;
-import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
+import foundation.oned6.dicegrid.server.auth.GridPrincipal;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
@@ -10,6 +9,7 @@ import java.net.URLEncoder;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.*;
 import static foundation.oned6.dicegrid.server.HTTPMethod.POST;
@@ -30,18 +30,15 @@ public class HTTPUtils {
 		throw new HTTPException(METHOD_NOT_ALLOWED);
 	}
 
-	public static TeamPrincipal requireAuthentication() throws HTTPException {
+	public static GridPrincipal currentIdentity() {
 		var me = context().activeUser();
 		if (me == null)
-			throw HTTPException.withMessage("Authentication required", UNAUTHORISED);
+			return null;
 
 		if (MASQUERADE.isBound())
 			return MASQUERADE.get();
 
-		if (!(me instanceof TeamPrincipal tp))
-			throw HTTPException.withMessage("Active user must be a team", UNAUTHORISED);
-
-		return tp;
+		return me;
 	}
 
 	public static void handleHttpException(HttpsExchange exchange, HTTPException e) {
@@ -76,6 +73,22 @@ public class HTTPUtils {
 		} catch (NumberFormatException e) {
 			return Optional.empty();
 		}
+	}
+
+	public static <T> T requirePresent(Optional<T> value, HTTPException.HTTPCode code) throws HTTPException {
+		return value.orElseThrow(() -> new HTTPException(code));
+	}
+
+	public static Supplier<HTTPException> errorCode(HTTPException.HTTPCode code) {
+		return () -> new HTTPException(code);
+	}
+
+	public static Supplier<HTTPException> errorCode(HTTPException.HTTPCode code, String message) {
+		return () -> new HTTPException(message, code);
+	}
+
+	public static Supplier<HTTPException> errorCode(HTTPException.HTTPCode code, Throwable cause) {
+		return () -> new HTTPException(cause, code);
 	}
 
 

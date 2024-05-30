@@ -54,6 +54,69 @@ class protocol_h {
     public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
+    static final int CHUNK_SIZE = (int)128L;
+    /**
+     * {@snippet lang=c :
+     * #define CHUNK_SIZE 128
+     * }
+     */
+    public static int CHUNK_SIZE() {
+        return CHUNK_SIZE;
+    }
+    static final int TRIP_REASON_NONE = (int)0L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_NONE = 0
+     * }
+     */
+    public static int TRIP_REASON_NONE() {
+        return TRIP_REASON_NONE;
+    }
+    static final int TRIP_REASON_OVERCURRENT = (int)1L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_OVERCURRENT = 1
+     * }
+     */
+    public static int TRIP_REASON_OVERCURRENT() {
+        return TRIP_REASON_OVERCURRENT;
+    }
+    static final int TRIP_REASON_OVERVOLTAGE = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_OVERVOLTAGE = 2
+     * }
+     */
+    public static int TRIP_REASON_OVERVOLTAGE() {
+        return TRIP_REASON_OVERVOLTAGE;
+    }
+    static final int TRIP_REASON_ANGLE = (int)3L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_ANGLE = 3
+     * }
+     */
+    public static int TRIP_REASON_ANGLE() {
+        return TRIP_REASON_ANGLE;
+    }
+    static final int TRIP_REASON_THD = (int)4L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_THD = 4
+     * }
+     */
+    public static int TRIP_REASON_THD() {
+        return TRIP_REASON_THD;
+    }
+    static final int TRIP_REASON_MANUAL = (int)5L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.TRIP_REASON_MANUAL = 5
+     * }
+     */
+    public static int TRIP_REASON_MANUAL() {
+        return TRIP_REASON_MANUAL;
+    }
     static final int NODE_TYPE_SOURCE = (int)0L;
     /**
      * {@snippet lang=c :
@@ -72,91 +135,127 @@ class protocol_h {
     public static int NODE_TYPE_LOAD() {
         return NODE_TYPE_LOAD;
     }
-    static final int REQ_FLASH_ATTINY = (int)0L;
+    static final int REQ_FLASH_BEGIN = (int)0L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_FLASH_ATTINY = 0
+     * enum <anonymous>.REQ_FLASH_BEGIN = 0
      * }
      */
-    public static int REQ_FLASH_ATTINY() {
-        return REQ_FLASH_ATTINY;
+    public static int REQ_FLASH_BEGIN() {
+        return REQ_FLASH_BEGIN;
     }
-    static final int REQ_CONFIGURE_SHUTDOWN = (int)1L;
+    static final int REQ_FLASH_DATA = (int)1L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_CONFIGURE_SHUTDOWN = 1
+     * enum <anonymous>.REQ_FLASH_DATA = 1
+     * }
+     */
+    public static int REQ_FLASH_DATA() {
+        return REQ_FLASH_DATA;
+    }
+    static final int REQ_FLASH_DATA_END = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.REQ_FLASH_DATA_END = 2
+     * }
+     */
+    public static int REQ_FLASH_DATA_END() {
+        return REQ_FLASH_DATA_END;
+    }
+    static final int REQ_CONFIGURE_SHUTDOWN = (int)3L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.REQ_CONFIGURE_SHUTDOWN = 3
      * }
      */
     public static int REQ_CONFIGURE_SHUTDOWN() {
         return REQ_CONFIGURE_SHUTDOWN;
     }
-    static final int REQ_CONFIGURE_ENGAGEMENT = (int)2L;
+    static final int REQ_CONFIGURE_ENGAGEMENT = (int)4L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_CONFIGURE_ENGAGEMENT = 2
+     * enum <anonymous>.REQ_CONFIGURE_ENGAGEMENT = 4
      * }
      */
     public static int REQ_CONFIGURE_ENGAGEMENT() {
         return REQ_CONFIGURE_ENGAGEMENT;
     }
-    static final int REQ_NODE_STATE = (int)3L;
+    static final int REQ_NODE_STATE = (int)5L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_NODE_STATE = 3
+     * enum <anonymous>.REQ_NODE_STATE = 5
      * }
      */
     public static int REQ_NODE_STATE() {
         return REQ_NODE_STATE;
     }
-    static final int REQ_SCAN = (int)4L;
+    static final int REQ_SCAN = (int)6L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_SCAN = 4
+     * enum <anonymous>.REQ_SCAN = 6
      * }
      */
     public static int REQ_SCAN() {
         return REQ_SCAN;
     }
-    static final int RES_FLASH_ATTINY = (int)0L;
+    static final int RES_FLASH_BEGIN = (int)0L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_FLASH_ATTINY = 0
+     * enum <anonymous>.RES_FLASH_BEGIN = 0
      * }
      */
-    public static int RES_FLASH_ATTINY() {
-        return RES_FLASH_ATTINY;
+    public static int RES_FLASH_BEGIN() {
+        return RES_FLASH_BEGIN;
     }
-    static final int RES_CONFIGURE_SHUTDOWN = (int)1L;
+    static final int RES_FLASH_DATA = (int)1L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_CONFIGURE_SHUTDOWN = 1
+     * enum <anonymous>.RES_FLASH_DATA = 1
+     * }
+     */
+    public static int RES_FLASH_DATA() {
+        return RES_FLASH_DATA;
+    }
+    static final int RES_FLASH_DATA_END = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.RES_FLASH_DATA_END = 2
+     * }
+     */
+    public static int RES_FLASH_DATA_END() {
+        return RES_FLASH_DATA_END;
+    }
+    static final int RES_CONFIGURE_SHUTDOWN = (int)3L;
+    /**
+     * {@snippet lang=c :
+     * enum <anonymous>.RES_CONFIGURE_SHUTDOWN = 3
      * }
      */
     public static int RES_CONFIGURE_SHUTDOWN() {
         return RES_CONFIGURE_SHUTDOWN;
     }
-    static final int RES_CONFIGURE_ENGAGEMENT = (int)2L;
+    static final int RES_CONFIGURE_ENGAGEMENT = (int)4L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_CONFIGURE_ENGAGEMENT = 2
+     * enum <anonymous>.RES_CONFIGURE_ENGAGEMENT = 4
      * }
      */
     public static int RES_CONFIGURE_ENGAGEMENT() {
         return RES_CONFIGURE_ENGAGEMENT;
     }
-    static final int RES_SCAN = (int)3L;
+    static final int RES_SCAN = (int)5L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_SCAN = 3
+     * enum <anonymous>.RES_SCAN = 5
      * }
      */
     public static int RES_SCAN() {
         return RES_SCAN;
     }
-    static final int RES_NODE_STATE = (int)4L;
+    static final int RES_NODE_STATE = (int)6L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_NODE_STATE = 4
+     * enum <anonymous>.RES_NODE_STATE = 6
      * }
      */
     public static int RES_NODE_STATE() {

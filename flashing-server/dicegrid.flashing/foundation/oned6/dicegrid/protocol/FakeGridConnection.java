@@ -1,6 +1,8 @@
 package foundation.oned6.dicegrid.protocol;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -23,6 +25,20 @@ public class FakeGridConnection implements GridConnection {
 	@Override
 	public List<NodeInfo> scan() throws InterruptedException {
 		return nodes;
+	}
+
+	@Override
+	public Map<NodeInfo, NodeState> scanWithState() throws InterruptedException {
+		var result = new HashMap<NodeInfo, NodeState>();
+		for (var node : nodes) {
+			try {
+				result.put(node, getState(node.address()));
+			} catch (DeviceException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return result;
 	}
 
 	@Override
@@ -94,6 +110,11 @@ public class FakeGridConnection implements GridConnection {
 			voltageThd,
 			Optional.ofNullable(faultReason)
 		);
+	}
+
+	@Override
+	public void close() {
+
 	}
 
 	private int indexOf(NodeAddress address) {

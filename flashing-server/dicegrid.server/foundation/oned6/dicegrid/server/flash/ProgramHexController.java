@@ -1,7 +1,7 @@
 package foundation.oned6.dicegrid.server.flash;
 
 import com.sun.net.httpserver.HttpsExchange;
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.HTTPException;
 import foundation.oned6.dicegrid.server.controller.Controller;
 
@@ -9,10 +9,8 @@ import java.io.IOException;
 
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.BAD_REQUEST;
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.NOT_FOUND;
-import static foundation.oned6.dicegrid.server.HTTPUtils.handleHttpException;
-import static foundation.oned6.dicegrid.server.HTTPUtils.tryParseLong;
+import static foundation.oned6.dicegrid.server.HTTPUtils.*;
 import static foundation.oned6.dicegrid.server.Server.context;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ProgramHexController implements Controller {
 	private final GridRepository repository;
@@ -45,7 +43,8 @@ public class ProgramHexController implements Controller {
 
 		} catch (HTTPException e) {
 			handleHttpException(exchange, e);
-		} catch (IOException _) {
+		}catch (Exception e) {
+			handleUnexpectedException(exchange, e);
 		}
 	}
 }

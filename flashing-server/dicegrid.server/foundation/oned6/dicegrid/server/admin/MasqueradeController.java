@@ -37,8 +37,8 @@ public class MasqueradeController implements Controller {
 				exchange.sendResponseHeaders(303, 0);
 		} catch (HTTPException e) {
 			handleHttpException(exchange, e);
-		} catch (IOException _) {
-
+		} catch (Exception e) {
+			handleUnexpectedException(exchange, e);
 		}
 	}
 }

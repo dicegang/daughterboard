@@ -1,6 +1,8 @@
 package foundation.oned6.dicegrid.server.view;
 
-public record StatusMessageView(String operation, String message, Status status) implements View {
+import foundation.oned6.dicegrid.server.HTTPException;
+
+public record StatusMessageView(String operation, View inner, Status status) implements View {
 	@Override
 	public String html() {
 		String colour = switch (status) {
@@ -19,7 +21,11 @@ public record StatusMessageView(String operation, String message, Status status)
 					<button>Dismiss</button>
 				</form>
 			</dialog>
-			""".formatted(operation, colour, title(), message.isEmpty() ? "" : "<p>" + message + "</p>");
+			""".formatted(operation, colour, title(), inner.html());
+	}
+
+	public StatusMessageView(String operation, String message, Status status) {
+		this(operation, (message == null || message.isBlank()) ? View.blank() : View.hypertext("<p>" + message + "<p>"), status);
 	}
 
 	@Override
@@ -34,6 +40,10 @@ public record StatusMessageView(String operation, String message, Status status)
 			return statusPresentPerfect;
 		else
 			return statusPresentPerfect + ": " + operation;
+	}
+
+	public static HTTPException wrapException(String operation, HTTPException e) {
+		return e.withViewWrapper(view -> new StatusMessageView(operation, view, Status.FAILURE));
 	}
 
 	public enum Status {

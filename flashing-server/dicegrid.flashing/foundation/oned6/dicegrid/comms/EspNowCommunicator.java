@@ -23,7 +23,7 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-public class EspNowCommunicator {
+public class EspNowCommunicator implements AutoCloseable {
 	private static final Duration RESPONSE_TIMEOUT = Duration.ofMillis(300);
 	private static final Context context = Pi4J.newAutoContext();
 
@@ -150,6 +150,11 @@ public class EspNowCommunicator {
 		assert offset == totalSize;
 
 		return result;
+	}
+
+	@Override
+	public void close() {
+		spi.close();
 	}
 
 	public record ReceivedMessage(byte[] mac, MemorySegment data) {

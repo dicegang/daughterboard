@@ -15,7 +15,7 @@ import static foundation.oned6.dicegrid.server.view.Views.*;
 import static java.lang.Math.cos;
 import static java.util.Map.entry;
 
-public record NodeDataEntry(TeamName teamName, NodeType type, NodeState state, boolean hasControlButtons, String formName) implements View {
+public record NodeDataEntry(TeamName teamName, NodeType type, NodeState state, boolean hasControlButtons) implements View {
 	private static final String LEGEND_OVERLAY_STYLE = """
 					<style>
 						@scope {
@@ -72,18 +72,18 @@ public record NodeDataEntry(TeamName teamName, NodeType type, NodeState state, b
 			"%4.1f%%".formatted(state.voltageThd() * 100)
 		));
 
+		int ownerID = teamName.team().teamID();
 		if (hasControlButtons) {
 			if (state.shutdown())
-				cells.add("<button type=submit name=action value=Start form=%s>Start</button>".formatted(formName));
+				cells.add("<button type=submit name=action value=start-%s-%s form=node-controls>Start</button>".formatted(ownerID, type.name().toLowerCase()));
 			else {
-				cells.add("<button type=submit name=action value=Shutdown form=%s>Shutdown</button>".formatted(formName));
+				cells.add("<button type=submit name=action value=shutdown-%s-%s form=node-controls>Shutdown</button>".formatted(ownerID, type.name().toLowerCase()));
 				if (state.engaged()) {
-					cells.add("<button type=submit name=action value=Disengage form=%s>Disengage</button>".formatted(formName));
+					cells.add("<button type=submit name=action value=disengage-%s-%s form=node-controls>Disengage</button>".formatted(ownerID, type.name().toLowerCase()));
 				} else
-					cells.add("<button type=submit name=action value=Engage form=%s>Engage</button>".formatted(formName));
+					cells.add("<button type=submit name=action value=engage-%s-%s form=node-controls>Engage</button>".formatted(ownerID, type.name().toLowerCase()));
 			}
 		}
-
 
 		return cells.stream()
 			.map("<td>%s</td>"::formatted)
@@ -122,11 +122,7 @@ public record NodeDataEntry(TeamName teamName, NodeType type, NodeState state, b
 		};
 	}
 
-	public static NodeDataEntry of(TeamPrincipal team, NodeType type, NodeState state) {
-		return new NodeDataEntry(TeamName.of(team), type, state, false, "");
-	}
-
-	public static NodeDataEntry withButtons(TeamPrincipal team, NodeType type, NodeState state, String formName) {
-		return new NodeDataEntry(TeamName.of(team), type, state, true, formName);
+	public static NodeDataEntry of(TeamPrincipal team, NodeType type, NodeState state, boolean controlButtons) {
+		return new NodeDataEntry(TeamName.of(team), type, state, controlButtons);
 	}
 }

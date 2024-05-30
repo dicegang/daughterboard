@@ -1,6 +1,6 @@
 package foundation.oned6.dicegrid.server.schematic;
 
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.view.View;
 
 import java.net.URI;

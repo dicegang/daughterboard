@@ -1,7 +1,7 @@
 package foundation.oned6.dicegrid.server.schematic;
 
 import com.sun.net.httpserver.HttpsExchange;
-import foundation.oned6.dicegrid.server.GridRepository;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.HTTPException;
 import foundation.oned6.dicegrid.server.controller.Controller;
 
@@ -54,8 +54,8 @@ public class SchematicDownloadController implements Controller {
 		} catch (HTTPException e) {
 			handleHttpException(exchange, e);
 			return;
-		} catch (IOException _) {
-
+		} catch (Exception e) {
+			handleUnexpectedException(exchange, e);
 		}
 	}
 }

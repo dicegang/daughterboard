@@ -4,7 +4,7 @@ import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.Set;
 
-public record AdminPrincipal() implements Principal {
+public record AdminPrincipal() implements GridPrincipal {
 	public static final Subject ADMIN = new Subject(true, Set.of(new AdminPrincipal()), Set.of(), Set.of());
 
 	@Override

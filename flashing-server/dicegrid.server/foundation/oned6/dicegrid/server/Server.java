@@ -7,6 +7,7 @@ import foundation.oned6.dicegrid.protocol.GridConnection;
 import foundation.oned6.dicegrid.server.admin.MasqueradeController;
 import foundation.oned6.dicegrid.server.auth.AdminPrincipal;
 import foundation.oned6.dicegrid.server.auth.AuthManager;
+import foundation.oned6.dicegrid.server.auth.GridPrincipal;
 import foundation.oned6.dicegrid.server.auth.TeamPrincipal;
 import foundation.oned6.dicegrid.server.controller.*;
 import foundation.oned6.dicegrid.server.cp.CertificateDownloadController;
@@ -14,6 +15,7 @@ import foundation.oned6.dicegrid.server.cp.ControlPanelController;
 import foundation.oned6.dicegrid.server.flash.*;
 import foundation.oned6.dicegrid.server.monitoring.MonitoringController;
 import foundation.oned6.dicegrid.server.monitoring.TestDataPage;
+import foundation.oned6.dicegrid.server.repository.GridRepository;
 import foundation.oned6.dicegrid.server.schematic.SchematicDownloadController;
 import foundation.oned6.dicegrid.server.schematic.SchematicStreamController;
 import foundation.oned6.dicegrid.server.schematic.UpdateSchematicController;
@@ -23,14 +25,14 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.Principal;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.METHOD_NOT_ALLOWED;
+import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.UNAUTHORISED;
 import static foundation.oned6.dicegrid.server.HTTPUtils.handleHttpException;
-import static foundation.oned6.dicegrid.server.HTTPUtils.tryParseInteger;
+import static foundation.oned6.dicegrid.server.HTTPUtils.handleUnexpectedException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Server implements AutoCloseable {
@@ -103,6 +105,8 @@ public class Server implements AutoCloseable {
 				handleRequest(path, (HttpsExchange) exchange, context);
 			} catch (HTTPException e) {
 				handleHttpException((HttpsExchange) exchange, e);
+			} catch (Exception e) {
+				handleUnexpectedException((HttpsExchange) exchange, e);
 			}
 		});
 	}
@@ -115,8 +119,8 @@ public class Server implements AutoCloseable {
 			var id = cookie.flatMap(HTTPUtils::tryParseInteger);
 			if (id.isPresent()) {
 				var name = repository.findTeamName(id.get());
-				if (name != null)
-					scope = scope.where(MASQUERADE, new TeamPrincipal(name, id.get()));
+				if (name.isPresent())
+					scope = scope.where(MASQUERADE, new TeamPrincipal(name.get(), id.get()));
 			}
 		}
 
@@ -130,13 +134,13 @@ public class Server implements AutoCloseable {
 	}
 
 
-	private Principal authenticateTeam(HttpsExchange exchange) {
+	private GridPrincipal authenticateTeam(HttpsExchange exchange) throws HTTPException {
 		try {
 			var teamName = parseTeamName(exchange.getSSLSession().getPeerPrincipal().getName());
 			if (teamName.equals("Administrator"))
 				return new AdminPrincipal();
 
-			return new TeamPrincipal(teamName, repository.findTeamID(teamName));
+			return new TeamPrincipal(teamName, repository.findTeamID(teamName).orElseThrow(() -> HTTPException.of(UNAUTHORISED)));
 		} catch (SSLPeerUnverifiedException e) {
 			return null;
 		}

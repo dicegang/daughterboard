@@ -1,6 +1,7 @@
 package foundation.oned6.dicegrid.server;
 
 import com.sun.net.httpserver.Headers;
+import foundation.oned6.dicegrid.server.auth.GridPrincipal;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public record RequestContext(Principal activeUser, URI contentRoot, URI requestURI, HTTPMethod httpMethod, Headers requestHeaders, InputStream requestBody, Charset charset) {
+public record RequestContext(GridPrincipal activeUser, URI contentRoot, URI requestURI, HTTPMethod httpMethod, Headers requestHeaders, InputStream requestBody, Charset charset) {
 	public Optional<Integer> contentLength() {
 		try {
 			return Optional.ofNullable(requestHeaders.getFirst("Content-Length")).map(Integer::parseInt);
