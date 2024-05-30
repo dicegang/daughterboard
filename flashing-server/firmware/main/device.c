@@ -18,7 +18,6 @@
 #include "sdkconfig.h"
 
 #include "network.h"
-#include "../../espnow.h"
 #include "crc8.h"
 #include "crc32.h"
 #include "avrisp.h"
@@ -28,19 +27,10 @@
 struct flashing_info {
 	bool is_active;
 	uint8_t target_node;
-	uint16_t total_size;
-	uint8_t total_chunks;
-	uint8_t data[8192];
+	uint16_t chunk_count;
+	struct chunk *chunks;
 } flashing_info;
 
-
-static esp_err_t send_blank_response(uint8_t destination_mac[ESP_NOW_ETH_ALEN], enum message_type type, bool ok) {
-	static union msg msg;
-	msg.response.ok = ok;
-	msg.response.type = type;
-
-	return send_msg(destination_mac, &msg);
-}
 
 static esp_err_t write_spi_config(struct node_configuration *config) {
 	nvs_handle_t handle;
@@ -124,45 +114,39 @@ void app_main(void) {
 				flashing_info = (struct flashing_info) {
 						.is_active = true,
 						.target_node = req->flash_begin.node_id,
-						.total_size = req->flash_begin.total_size,
-						.total_chunks = req->flash_begin.total_chunks
+						.chunk_count = req->flash_begin.total_chunks
 				};
+				if (flashing_info.is_active)
+					free(flashing_info.chunks);
 
-				uint8_t expected_total_chunks = flashing_info.total_size / CHUNK_SIZE;
-				if (flashing_info.total_size % CHUNK_SIZE)
-					expected_total_chunks += 1;
-
-				if (expected_total_chunks != flashing_info.total_chunks)
-					goto error;
-
-				memset(flashing_info.data, '\x0', sizeof(flashing_info.data));
+				flashing_info.chunks = calloc(sizeof(*flashing_info.chunks), req->flash_begin.total_chunks);
 				goto ok;
 			case FLASH_DATA:
-				if (!flashing_info.is_active || (req->flash_data.chunk_idx > flashing_info.total_chunks)) {
+				if (!flashing_info.is_active || (req->flash_data.chunk_idx > flashing_info.chunk_count)) {
 					goto error;
 				}
 
-				size_t chunk_size;
-				if ((flashing_info.total_size % CHUNK_SIZE) &&
-					(req->flash_data.chunk_idx == (flashing_info.total_chunks - 1)))
-					chunk_size = flashing_info.total_size % CHUNK_SIZE;
-				else
-					chunk_size = CHUNK_SIZE;
-
-				if (crc8(req->flash_data.data, chunk_size) != req->flash_data.crc) {
+				if (crc8(req->flash_data.chunk, req->flash_data.chunk_size) != req->flash_data.crc) {
 					goto error;
 				}
 
-				memcpy(flashing_info.data + (CHUNK_SIZE * req->flash_data.chunk_idx), req->flash_data.data, CHUNK_SIZE);
+				if (flashing_info.chunks[req->flash_data.chunk_idx].data) {
+					free(flashing_info.chunks[req->flash_data.chunk_idx].data);
+				}
+
+				flashing_info.chunks[req->flash_data.chunk_idx].size = req->flash_data.chunk_size;
+				flashing_info.chunks[req->flash_data.chunk_idx].start_offset = req->flash_data.chunk_offset;
+
+				uint8_t *data = malloc(req->flash_data.chunk_size);
+				flashing_info.chunks[req->flash_data.chunk_idx].data = data;
+				memcpy(data, req->flash_data.chunk, req->flash_data.chunk_size);
+
 				goto ok;
 			case FLASH_DATA_END:
 				if (!flashing_info.is_active)
 					goto error;
 
 				flashing_info.is_active = false;
-				if (crc32(flashing_info.data, flashing_info.total_size) != req->flash_data_end.crc)
-					goto error;
-
 				struct node_configuration c;
 				if (load_spi_config(&c) != ESP_OK)
 					goto error;
@@ -178,7 +162,7 @@ void app_main(void) {
 				goto error;
 
 				loopend:
-				if (program(&c.busses[bus][slave].spi_config, flashing_info.data, flashing_info.total_size) != ESP_OK)
+				if (program(&c.busses[bus][slave].spi_config, flashing_info.chunk_count, flashing_info.chunks) != ESP_OK)
 					goto error;
 
 				goto ok;
