@@ -1,7 +1,10 @@
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#define CHUNK_SIZE 128
+#define MAX_CHUNK_SIZE 16
 
 struct node_state {
     bool shutdown;
@@ -76,19 +79,18 @@ struct request_msg {
     union {
         struct {
             uint8_t node_id;
-            uint16_t total_size;
             uint8_t total_chunks;
         } flash_begin;
 
         struct {
         	uint8_t chunk_idx;
         	uint8_t crc;
-        	uint8_t data[CHUNK_SIZE];
+			uint16_t chunk_offset;
+        	uint8_t chunk_size;
+			uint8_t chunk[MAX_CHUNK_SIZE];
         } flash_data;
 
-        struct {
-            uint32_t crc;
-        } flash_data_end;
+        struct {} flash_data_end;
 
         struct {
             uint8_t node_id;
@@ -130,3 +132,5 @@ struct response_msg {
 		struct {} set_node_info;
     };
 };
+
+#endif

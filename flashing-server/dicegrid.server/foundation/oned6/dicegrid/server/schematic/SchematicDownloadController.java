@@ -34,7 +34,7 @@ public class SchematicDownloadController implements Controller {
 				.orElseThrow(() -> HTTPException.of( BAD_REQUEST));
 
 			var schematic = repository.getSchematic(teamID, schematicID).orElseThrow(() -> HTTPException.of(NOT_FOUND));
-			var filename = repository.findTeamName(teamID) + "-" + schematicID + ".pdf";
+			var filename = repository.findTeamName(teamID).orElse("") + "-" + schematicID + ".pdf";
 
 			if (context().queryParam("download").isPresent())
 				exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename*=UTF-8''" + urlEncode(filename));

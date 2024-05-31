@@ -14,6 +14,7 @@ Original version:
 
 #include <stdint.h>
 #include "../protocol.h"
+#include <esp_err.h>
 
 struct chunk {
 	uint16_t start_offset;

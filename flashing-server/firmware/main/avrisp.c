@@ -3,11 +3,14 @@
 #include <freertos/task.h>
 #include <portmacro.h>
 #include <driver/spi_master.h>
+
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <esp_log.h>
 #include <string.h>
 #include "avrisp.h"
 #include "command.h"
 #include "../../protocol.h"
+
 
 #define TAG "avrisp"
 
@@ -19,6 +22,7 @@ static esp_err_t verify_chunk(const struct bitbang_spi_config *config, const str
 static void write_chunk_(const struct bitbang_spi_config *config, const struct chunk *chunk);
 
 static void bb_spi_begin(struct bitbang_spi_config const *config) {
+	gpio_set_direction(config->rst, GPIO_MODE_OUTPUT);
 	gpio_set_direction(config->clk, GPIO_MODE_OUTPUT);
 	gpio_set_direction(config->mosi, GPIO_MODE_OUTPUT);
 	gpio_set_direction(config->miso, GPIO_MODE_INPUT);
@@ -37,32 +41,41 @@ static uint8_t bb_spi_transfer(struct bitbang_spi_config const *config, uint8_t 
 	return b;
 }
 
-static uint8_t bb_spi_write4(struct bitbang_spi_config const *config, uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
-	bb_spi_transfer(config, a);
-	bb_spi_transfer(config, b);
-	bb_spi_transfer(config, c);
-	return 	bb_spi_transfer(config, d);
+
+static void bb_spi_write4(struct bitbang_spi_config const *config, uint8_t a, uint8_t b, uint8_t c, uint8_t d, uint8_t *out) {
+	uint8_t a_response = bb_spi_transfer(config, a);
+	uint8_t b_response = bb_spi_transfer(config, b);
+	uint8_t c_response = bb_spi_transfer(config, c);
+	uint8_t d_response = bb_spi_transfer(config, d);
+
+	if (out != NULL) {
+		out[0] = a_response;
+		out[1] = b_response;
+		out[2] = c_response;
+		out[3] = d_response;
+	}
 }
 
 static void bb_spi_flash(struct bitbang_spi_config const *config, size_t addr, uint8_t data) {
 	size_t addr_words = addr / 2;
 	bool high = addr & 1;
 
-	bb_spi_write4(config, 0x40 + 8 * high, addr_words >> 8 & 0xFF, addr_words & 0xFF, data);
+	bb_spi_write4(config, 0x40 + 8 * high, (addr_words >> 8) & 0xFF, addr_words & 0xFF, data, NULL);
 }
 
 static void bb_spi_commit(struct bitbang_spi_config const *config, size_t addr) {
 	size_t addr_words = addr / 2;
 
-	bb_spi_write4(config, 0x4C, (addr_words >> 8) & 0xFF, addr_words & 0xFF, 0);
-	vTaskDelay(30 / portTICK_PERIOD_MS);
+	bb_spi_write4(config, 0x4C, (addr_words >> 8) & 0xFF, addr_words & 0xFF, 0, NULL);
 }
 
 static uint8_t bb_spi_read(struct bitbang_spi_config const *config, size_t addr) {
 	size_t addr_words = addr / 2;
 	bool high = addr & 1;
 
-	return bb_spi_write4(config, 0x20 + high * 8, (addr_words >> 8) & 0xFF, addr_words & 0xFF, 0);
+	uint8_t output[4];
+	bb_spi_write4(config, 0x20 + high * 8, (addr_words >> 8) & 0xFF, addr_words & 0xFF, 0, output);
+	return output[3];
 }
 
 static void bb_spi_read_bulk(struct bitbang_spi_config const *config, size_t address, uint8_t *buffer, size_t length) {
@@ -73,63 +86,105 @@ static void bb_spi_read_bulk(struct bitbang_spi_config const *config, size_t add
 
 static void write_chunk_(const struct bitbang_spi_config *config, const struct chunk *chunk) {
 	size_t prev_pg_idx = chunk->start_offset / PAGE_SIZE_BYTES;
-	for (int c_off = 0; c_off < chunk->size; ) {
-		size_t curr_addr = chunk->start_offset + c_off;
+
+	size_t curr_addr = prev_pg_idx * PAGE_SIZE_BYTES;
+	while (curr_addr < chunk->start_offset) {
+		bb_spi_flash(config, curr_addr, 0xFF);
+		curr_addr++;
+	}
+
+	while (curr_addr < (chunk->start_offset + chunk->size)) {
 		size_t curr_pg_idx = curr_addr / PAGE_SIZE_BYTES;
 
 		if (curr_pg_idx != prev_pg_idx) {
-			bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_WORDS);
+			bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_BYTES);
 			prev_pg_idx = curr_pg_idx;
 		}
 
-		bb_spi_flash(config, curr_addr, chunk->data[c_off++]);
+		bb_spi_flash(config, curr_addr, chunk->data[curr_addr - chunk->start_offset]);
+		curr_addr++;
 	}
 
-	bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_WORDS);
+	while (curr_addr % PAGE_SIZE_BYTES) {
+		bb_spi_flash(config, curr_addr, 0xFF);
+		curr_addr++;
+	}
+
+	bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_BYTES);
 }
 
 static esp_err_t write_verify_chunk(struct bitbang_spi_config const* config, struct chunk const *chunk) {
 	write_chunk_(config, chunk);
-
+	esp_rom_delay_us(4500);
 	return verify_chunk(config, chunk);
 }
 
 static esp_err_t verify_chunk(const struct bitbang_spi_config *config, const struct chunk *chunk) {
+	if (chunk->size == 0) {
+		return ESP_OK;
+	}
+
 	uint8_t *verif_buffer = malloc(chunk->size);
-	bb_spi_read_bulk(config, chunk->start_offset / 2, verif_buffer, chunk->size);
+	if (verif_buffer == NULL) {
+		return ESP_ERR_NO_MEM;
+	}
+
+	bb_spi_read_bulk(config, chunk->start_offset, verif_buffer, chunk->size);
+
+	// print it out
+	for (int i = 0; i < chunk->size; i++) {
+		ESP_LOGI(TAG, "%02x ", verif_buffer[i]);
+	}
 
 	esp_err_t result;
-	if (memcmp(chunk->data, verif_buffer, chunk->size) != 0) {
+	int diff = memcmp(chunk->data, verif_buffer, chunk->size);
+	if (diff != 0) {
+		// find where mismatch is
+		for (int i = 0; i < chunk->size; i++) {
+			if (chunk->data[i] != verif_buffer[i]) {
+				ESP_LOGW(TAG, "Mismatch at %d: %02x != %02x", i + chunk->start_offset, chunk->data[i], verif_buffer[i]);
+			}
+		}
 		result = ESP_ERR_INVALID_CRC;
 	} else {
 		result = ESP_OK;
 	}
 
 	free(verif_buffer);
+
+	ESP_LOGD(TAG, "Verified chunk at %04x", chunk->start_offset);
 	return result;
 }
 
 esp_err_t program(struct bitbang_spi_config *spi_config, size_t chunks, struct chunk const *data) {
+	ESP_LOGI(TAG, "Programming %d chunks", chunks);
 	bb_spi_begin(spi_config);
 
 	for (;;) {
 		gpio_set_level(spi_config->rst, 0);
 
 		gpio_set_level(spi_config->clk, 0);
-		vTaskDelay(20 / portTICK_PERIOD_MS);
+		esp_rom_delay_us(20 * 1000);
 		gpio_set_level(spi_config->rst, 1);
 		// Pulse must be minimum 2 target CPU clock cycles so 100 usec is ok for CPU
 		// speeds above 20 KHz
 		esp_rom_delay_us(100);
 		gpio_set_level(spi_config->rst, 0);
 
-		vTaskDelay(50 / portTICK_PERIOD_MS);
-		uint8_t result = bb_spi_write4(spi_config, 0xAC, 0x53, 0x00, 0x00);
-		if (result == 0x53) {
+		esp_rom_delay_us(50 * 1000);
+		bb_spi_write4(spi_config, 0xAC, 0x80, 0x00, 0x00, NULL);
+		esp_rom_delay_us(50 * 1000);
+
+		uint8_t response[4];
+		bb_spi_write4(spi_config, 0xAC, 0x53, 0x00, 0x00, response);
+		if (response[2] == 0x53) {
 			break;
 		}
-		ESP_LOGD(TAG, "Not in synch");
+		ESP_LOGW(TAG, "Not in synch");
 	}
+	esp_rom_delay_us(50 * 1000);
+
+	ESP_LOGD(TAG, "entered programming mode");
 
 	for (size_t c = 0; c < chunks; c++) {
 		esp_err_t result;

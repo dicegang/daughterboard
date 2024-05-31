@@ -36,7 +36,7 @@ public class ProgramHexController implements Controller {
 			var filename = switch (event.target()) {
 				case SOURCE -> "source";
 				case LOAD -> "load";
-			} + "-" + repository.findTeamName(event.teamID()) + "-" + eventID + ".hex";
+			} + "-" + repository.findTeamName(event.teamID()).orElse("") + "-" + eventID + ".hex";
 			exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"" + filename + "\"" );
 			exchange.sendResponseHeaders(200, logBytes.length);
 			exchange.getResponseBody().write(logBytes);

@@ -26,7 +26,7 @@ public class CRC8 implements Checksum {
 
 	@Override
 	public void update(final byte[] b, final int off, final int len) {
-		for (int i = 0; i < len; i++) {CRC32
+		for (int i = 0; i < len; i++) {
 			update(b[i + off] & 0xFF);
 		}
 	}
