@@ -17,9 +17,33 @@
 #define PAGE_SIZE_WORDS 32
 #define PAGE_SIZE_BYTES (PAGE_SIZE_WORDS*2)
 
-static esp_err_t verify_chunk(const struct bitbang_spi_config *config, const struct chunk *chunk);
+typedef struct flash_list_node {
+	struct flash_list_node *next;
+	uint8_t page_idx;
+	uint8_t data[PAGE_SIZE_BYTES];
+} flash_list_node;
 
-static void write_chunk_(const struct bitbang_spi_config *config, const struct chunk *chunk);
+static void page_list_free(flash_list_node **list) {
+	for (struct flash_list_node *node = *list; node;) {
+		struct flash_list_node *next = node->next;
+		free(node);
+		node = next;
+	}
+}
+
+static uint8_t* page_list_get_or_append(flash_list_node **list, uint8_t page_idx) {
+	for (struct flash_list_node *node = *list; node; node = node->next) {
+		if (node->page_idx == page_idx) {
+			return node->data;
+		}
+	}
+
+	struct flash_list_node *node = calloc(sizeof(struct flash_list_node), 1);
+	node->page_idx = page_idx;
+	node->next = *list;
+	*list = node;
+	return node->data;
+}
 
 static void bb_spi_begin(struct bitbang_spi_config const *config) {
 	gpio_set_direction(config->rst, GPIO_MODE_OUTPUT);
@@ -56,20 +80,39 @@ static void bb_spi_write4(struct bitbang_spi_config const *config, uint8_t a, ui
 	}
 }
 
+
+static bool bb_spi_rdy(struct bitbang_spi_config const *config) {
+	uint8_t output[4];
+	bb_spi_write4(config, 0xf0, 0x00, 0x00, 0, output);
+	return output[3];
+}
+
+static void wait_for_rdy(struct bitbang_spi_config const *config) {
+//	do {
+//		esp_rom_delay_us(100);
+//	} while (!bb_spi_rdy(config));
+	esp_rom_delay_us(5000);
+}
+
 static void bb_spi_flash(struct bitbang_spi_config const *config, size_t addr, uint8_t data) {
 	size_t addr_words = addr / 2;
 	bool high = addr & 1;
 
+	wait_for_rdy(config);
 	bb_spi_write4(config, 0x40 + 8 * high, (addr_words >> 8) & 0xFF, addr_words & 0xFF, data, NULL);
+	wait_for_rdy(config);
 }
 
 static void bb_spi_commit(struct bitbang_spi_config const *config, size_t addr) {
 	size_t addr_words = addr / 2;
 
+	wait_for_rdy(config);
 	bb_spi_write4(config, 0x4C, (addr_words >> 8) & 0xFF, addr_words & 0xFF, 0, NULL);
+	wait_for_rdy(config);
 }
 
 static uint8_t bb_spi_read(struct bitbang_spi_config const *config, size_t addr) {
+	wait_for_rdy(config);
 	size_t addr_words = addr / 2;
 	bool high = addr & 1;
 
@@ -84,65 +127,32 @@ static void bb_spi_read_bulk(struct bitbang_spi_config const *config, size_t add
 	}
 }
 
-static void write_chunk_(const struct bitbang_spi_config *config, const struct chunk *chunk) {
-	size_t prev_pg_idx = chunk->start_offset / PAGE_SIZE_BYTES;
-
-	size_t curr_addr = prev_pg_idx * PAGE_SIZE_BYTES;
-	while (curr_addr < chunk->start_offset) {
-		bb_spi_flash(config, curr_addr, 0xFF);
-		curr_addr++;
+static void write_page(const struct bitbang_spi_config *config, uint8_t page, uint8_t *data) {
+	for (size_t i = 0; i < PAGE_SIZE_BYTES; i++) {
+		bb_spi_flash(config, i + page*PAGE_SIZE_BYTES, data[i]);
 	}
 
-	while (curr_addr < (chunk->start_offset + chunk->size)) {
-		size_t curr_pg_idx = curr_addr / PAGE_SIZE_BYTES;
-
-		if (curr_pg_idx != prev_pg_idx) {
-			bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_BYTES);
-			prev_pg_idx = curr_pg_idx;
-		}
-
-		bb_spi_flash(config, curr_addr, chunk->data[curr_addr - chunk->start_offset]);
-		curr_addr++;
-	}
-
-	while (curr_addr % PAGE_SIZE_BYTES) {
-		bb_spi_flash(config, curr_addr, 0xFF);
-		curr_addr++;
-	}
-
-	bb_spi_commit(config, prev_pg_idx*PAGE_SIZE_BYTES);
+	bb_spi_commit(config, page*PAGE_SIZE_BYTES);
 }
 
-static esp_err_t write_verify_chunk(struct bitbang_spi_config const* config, struct chunk const *chunk) {
-	write_chunk_(config, chunk);
-	esp_rom_delay_us(4500);
-	return verify_chunk(config, chunk);
-}
 
-static esp_err_t verify_chunk(const struct bitbang_spi_config *config, const struct chunk *chunk) {
-	if (chunk->size == 0) {
-		return ESP_OK;
-	}
-
-	uint8_t *verif_buffer = malloc(chunk->size);
-	if (verif_buffer == NULL) {
-		return ESP_ERR_NO_MEM;
-	}
-
-	bb_spi_read_bulk(config, chunk->start_offset, verif_buffer, chunk->size);
+static esp_err_t verify_page(const struct bitbang_spi_config *config, uint8_t page, uint8_t *data) {
+	uint8_t *verif_buffer = malloc(PAGE_SIZE_BYTES);
+	bb_spi_read_bulk(config, page*PAGE_SIZE_BYTES, verif_buffer, PAGE_SIZE_BYTES);
 
 	// print it out
-	for (int i = 0; i < chunk->size; i++) {
-		ESP_LOGI(TAG, "%02x ", verif_buffer[i]);
+	for (int i = 0; i < PAGE_SIZE_BYTES; i++) {
+		ESP_LOGD(TAG, "%02x ", verif_buffer[i]);
 	}
 
 	esp_err_t result;
-	int diff = memcmp(chunk->data, verif_buffer, chunk->size);
+	int diff = memcmp(data, verif_buffer, PAGE_SIZE_BYTES);
 	if (diff != 0) {
+
 		// find where mismatch is
-		for (int i = 0; i < chunk->size; i++) {
-			if (chunk->data[i] != verif_buffer[i]) {
-				ESP_LOGW(TAG, "Mismatch at %d: %02x != %02x", i + chunk->start_offset, chunk->data[i], verif_buffer[i]);
+		for (int i = 0; i < PAGE_SIZE_BYTES; i++) {
+			if (data[i] != verif_buffer[i]) {
+				ESP_LOGW(TAG, "Mismatch at %d: %02x != %02x", i + PAGE_SIZE_BYTES*page, data[i], verif_buffer[i]);
 			}
 		}
 		result = ESP_ERR_INVALID_CRC;
@@ -151,10 +161,32 @@ static esp_err_t verify_chunk(const struct bitbang_spi_config *config, const str
 	}
 
 	free(verif_buffer);
-
-	ESP_LOGD(TAG, "Verified chunk at %04x", chunk->start_offset);
 	return result;
 }
+
+static esp_err_t write_verify_page(struct bitbang_spi_config const* config, uint8_t page, uint8_t *data) {
+	write_page(config, page, data);
+	esp_rom_delay_us(4500);
+	wait_for_rdy(config);
+	return verify_page(config, page, data);
+}
+
+static void create_list_from_chunks(flash_list_node **head, struct chunk const *chunk, size_t chunk_count) {
+	for (size_t i = 0; i < chunk_count; i++) {
+		// split chunk into pages
+		size_t current_address = chunk[i].start_offset;
+		while (current_address < (chunk[i].start_offset + chunk[i].size)) {
+			size_t page_offset = current_address % PAGE_SIZE_BYTES;
+			size_t page_index = current_address / PAGE_SIZE_BYTES;
+
+			uint8_t *page = page_list_get_or_append(head, page_index);
+			memcpy(page + page_offset, chunk[i].data + (current_address - chunk[i].start_offset), PAGE_SIZE_BYTES - page_offset);
+
+			current_address += PAGE_SIZE_BYTES - page_offset;
+		}
+	}
+}
+
 
 esp_err_t program(struct bitbang_spi_config *spi_config, size_t chunks, struct chunk const *data) {
 	ESP_LOGI(TAG, "Programming %d chunks", chunks);
@@ -168,11 +200,9 @@ esp_err_t program(struct bitbang_spi_config *spi_config, size_t chunks, struct c
 		gpio_set_level(spi_config->rst, 1);
 		// Pulse must be minimum 2 target CPU clock cycles so 100 usec is ok for CPU
 		// speeds above 20 KHz
-		esp_rom_delay_us(100);
+		esp_rom_delay_us(1000);
 		gpio_set_level(spi_config->rst, 0);
 
-		esp_rom_delay_us(50 * 1000);
-		bb_spi_write4(spi_config, 0xAC, 0x80, 0x00, 0x00, NULL);
 		esp_rom_delay_us(50 * 1000);
 
 		uint8_t response[4];
@@ -182,22 +212,39 @@ esp_err_t program(struct bitbang_spi_config *spi_config, size_t chunks, struct c
 		}
 		ESP_LOGW(TAG, "Not in synch");
 	}
-	esp_rom_delay_us(50 * 1000);
+	esp_rom_delay_us(18 * 1000);
+	bb_spi_write4(spi_config, 0x30, 0x00, 0x00, 0x00, NULL);
+	esp_rom_delay_us(8 * 1000);
+	bb_spi_write4(spi_config, 0x30, 0x00, 0x01, 0x00, NULL);
+	esp_rom_delay_us(8 * 1000);
+	bb_spi_write4(spi_config, 0x30, 0x00, 0x02, 0x00, NULL);
+	esp_rom_delay_us(8 * 1000);
+	bb_spi_write4(spi_config, 0xAC, 0x80, 0x00, 0x00, NULL);
+	esp_rom_delay_us(56 * 1000);
 
-	ESP_LOGD(TAG, "entered programming mode");
+	ESP_LOGI(TAG, "entered programming mode");
 
-	for (size_t c = 0; c < chunks; c++) {
+	flash_list_node *list = NULL;
+	create_list_from_chunks(&list, data, chunks);
+	ESP_LOGI(TAG, "Created list of %d pages", list ? list->page_idx + 1 : 0);
+	for (struct flash_list_node *node = list; node; node = node->next) {
 		esp_err_t result;
+		ESP_LOGI(TAG, "Writing page %d", node->page_idx);
 		for (int i = 0; i < 2; i++) {
-			result = write_verify_chunk(spi_config, &data[c]);
+			result = write_verify_page(spi_config, node->page_idx, node->data);
 			if (result == ESP_OK)
 				break;
 			ESP_LOGW(TAG, "failed to write chunk; retrying");
 		}
 
-		if (result != ESP_OK)
+		if (result != ESP_OK) {
+			page_list_free(&list);
 			return result;
+		}
 	}
 
+	gpio_set_level(spi_config->rst, 1);
+
+	page_list_free(&list);
 	return ESP_OK;
 }
