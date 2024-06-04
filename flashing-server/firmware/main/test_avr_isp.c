@@ -39,13 +39,22 @@ void app_main(void) {
 //	};
 
 	struct node_spi_config config = (struct node_spi_config) {
-		.spi_attiny = NODE_HSPI, .ss_attiny = 23
+		.spi_attiny = NODE_VSPI, .ss_attiny = 23
 	};
+
 
 	spi_bus_config_t bus_cfg = {
 			.mosi_io_num = 0,
 			.miso_io_num = 2,
 			.sclk_io_num = 4,
+
+			.quadwp_io_num = -1,
+			.quadhd_io_num = -1,
+			.data4_io_num = -1,
+			.data5_io_num = -1,
+			.data6_io_num = -1,
+			.data7_io_num = -1,
+
 			.flags = SPICOMMON_BUSFLAG_GPIO_PINS | SPICOMMON_BUSFLAG_MASTER
 	};
 
@@ -54,7 +63,8 @@ void app_main(void) {
 	gpio_set_direction(bus_cfg.miso_io_num, GPIO_MODE_INPUT);
 	gpio_set_direction(bus_cfg.sclk_io_num, GPIO_MODE_OUTPUT);
 
-	ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &bus_cfg, SPI_DMA_DISABLED));
+
+	ESP_ERROR_CHECK(spi_bus_initialize(NODE_VSPI, &bus_cfg, SPI_DMA_DISABLED));
 	srand(0);
 	static struct chunk chunks[512];
 	for (int i = 0; i < 512; i++) {

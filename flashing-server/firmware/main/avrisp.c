@@ -179,6 +179,48 @@ static uint8_t isp_spi_read(spi_session const *session, size_t addr) {
 	return transaction.rx_data[0];
 } //gedagedigedagedi-oh
 
+static uint8_t isp_spi_read_signature(spi_session const *session) {
+	spi_transaction_t transaction = {
+			.flags = SPI_TRANS_CS_KEEP_ACTIVE | SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
+			.cmd = 0x30,
+			.addr = 0x01,
+			.length = 8,
+			.tx_data = {0, 0, 0, 0},
+	};
+
+	esp_err_t result = spi_device_transmit(session->spi_attiny, &transaction);
+	if (result != ESP_OK) {
+		ESP_LOGE(TAG, "isp_spi_read: could not transmit to device: %s", esp_err_to_name(result));
+		return 0;
+	}
+
+	return transaction.rx_data[0];
+} //gedagedigedagedi-oh
+
+static uint8_t isp_spi_format(spi_session const *session) {
+	spi_transaction_ext_t transaction = {
+			{
+					.flags = SPI_TRANS_CS_KEEP_ACTIVE | SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA |
+							 SPI_TRANS_VARIABLE_ADDR |
+							 SPI_TRANS_VARIABLE_CMD,
+					.cmd = 0xAC,
+					.addr = 0x80,
+					.length = 16,
+					.tx_data = {0x00, 0x00},
+			},
+			.command_bits = 8,
+			.address_bits = 8,
+			.dummy_bits = 0
+	};
+	esp_err_t result = spi_device_transmit(session->spi_attiny, (spi_transaction_t *) &transaction);
+	if (result != ESP_OK) {
+		ESP_LOGE(TAG, "isp_spi_read: could not transmit to device: %s", esp_err_to_name(result));
+		return 0;
+	}
+
+	return transaction.base.rx_data[0];
+} //gedagedigedagedi-oh
+
 static bool isp_spi_program(spi_session const *session) {
 	spi_transaction_ext_t transaction = {
 			{
@@ -188,7 +230,7 @@ static bool isp_spi_program(spi_session const *session) {
 					.cmd = 0xAC,
 					.addr = 0x53,
 					.length = 16,
-					.tx_data = {0xaa, 0xaa},
+					.tx_data = {0x00, 0x00},
 			},
 			.command_bits = 8,
 			.address_bits = 8,
@@ -200,8 +242,6 @@ static bool isp_spi_program(spi_session const *session) {
 		ESP_LOGE(TAG, "isp_spi_program: could not transmit to device: %s", esp_err_to_name(result));
 		return false;
 	}
-	ESP_LOGI(TAG, "rx_data[0]: %02x", transaction.base.rx_data[0]);
-	ESP_LOGI(TAG, "rx_data[1]: %02x", transaction.base.rx_data[1]);
 
 	return transaction.base.rx_data[0] == 0x53;
 }
@@ -341,6 +381,8 @@ esp_err_t program(struct node_spi_config *spi_config, size_t chunks, struct chun
 		ESP_LOGW(TAG, "Not in synch");
 	}
 
+	ESP_LOGI(TAG, "Signature: %02x", isp_spi_read_signature(&session));
+//	isp_spi_format(&session);
 	DELAY_MS(50);
 
 	flash_list list;
