@@ -15,43 +15,36 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
 /**
  * {@snippet lang=c :
  * struct request_msg {
- *     enum {
- *         REQ_FLASH_BEGIN,
- *         REQ_FLASH_DATA,
- *         REQ_FLASH_DATA_END,
- *         REQ_CONFIGURE_SHUTDOWN,
- *         REQ_CONFIGURE_ENGAGEMENT,
- *         REQ_NODE_STATE,
- *         REQ_SCAN
- *     } type;
+ *     enum message_type type;
  *     union {
- *         struct {
+ *         struct flash_begin_req {
  *             uint8_t node_id;
- *             uint16_t total_size;
- *             uint8_t total_chunks;
+ *             uint16_t total_chunks;
  *         } flash_begin;
- *         struct {
+ *         struct flash_data_req {
  *             uint8_t chunk_idx;
  *             uint8_t crc;
- *             uint8_t data[128];
+ *             uint16_t chunk_offset;
+ *             uint8_t chunk_size;
+ *             uint8_t chunk[16];
  *         } flash_data;
  *         struct {
- *             uint64_t crc;
  *         } flash_data_end;
- *         struct {
+ *         struct cfg_shtdn_req {
  *             uint8_t node_id;
  *             bool shutdown;
  *         } configure_shutdown;
- *         struct {
+ *         struct cfg_engage_req {
  *             uint8_t node_id;
  *             bool engaged;
  *         } configure_engagement;
- *         struct {
+ *         struct scan_req {
  *             bool include_states;
  *         } scan;
- *         struct {
+ *         struct node_state_req {
  *             uint8_t node_id;
  *         } node_state;
+ *         struct node_configuration set_node_info;
  *     };
  * }
  * }
@@ -64,17 +57,16 @@ class request_msg {
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
         protocol_h.C_INT.withName("type"),
-        MemoryLayout.paddingLayout(4),
         MemoryLayout.unionLayout(
-            request_msg.flash_begin.layout().withName("flash_begin"),
-            request_msg.flash_data.layout().withName("flash_data"),
+            request_msg.flash_begin_req.layout().withName("flash_begin"),
+            request_msg.flash_data_req.layout().withName("flash_data"),
             request_msg.flash_data_end.layout().withName("flash_data_end"),
-            request_msg.configure_shutdown.layout().withName("configure_shutdown"),
-            request_msg.configure_engagement.layout().withName("configure_engagement"),
-            request_msg.scan.layout().withName("scan"),
-            request_msg.node_state.layout().withName("node_state"),
-            MemoryLayout.paddingLayout(136)
-        ).withName("$anon$60:5")
+            request_msg.cfg_shtdn_req.layout().withName("configure_shutdown"),
+            request_msg.cfg_engage_req.layout().withName("configure_engagement"),
+            request_msg.scan_req.layout().withName("scan"),
+            request_msg.node_state_req.layout().withName("node_state"),
+            node_configuration.layout().withName("set_node_info")
+        ).withName("$anon$78:5")
     ).withName("request_msg");
 
     /**
@@ -89,15 +81,7 @@ class request_msg {
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * enum {
-     *     REQ_FLASH_BEGIN,
-     *     REQ_FLASH_DATA,
-     *     REQ_FLASH_DATA_END,
-     *     REQ_CONFIGURE_SHUTDOWN,
-     *     REQ_CONFIGURE_ENGAGEMENT,
-     *     REQ_NODE_STATE,
-     *     REQ_SCAN
-     * } type
+     * enum message_type type
      * }
      */
     public static final OfInt type$layout() {
@@ -109,15 +93,7 @@ class request_msg {
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * enum {
-     *     REQ_FLASH_BEGIN,
-     *     REQ_FLASH_DATA,
-     *     REQ_FLASH_DATA_END,
-     *     REQ_CONFIGURE_SHUTDOWN,
-     *     REQ_CONFIGURE_ENGAGEMENT,
-     *     REQ_NODE_STATE,
-     *     REQ_SCAN
-     * } type
+     * enum message_type type
      * }
      */
     public static final long type$offset() {
@@ -127,15 +103,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * enum {
-     *     REQ_FLASH_BEGIN,
-     *     REQ_FLASH_DATA,
-     *     REQ_FLASH_DATA_END,
-     *     REQ_CONFIGURE_SHUTDOWN,
-     *     REQ_CONFIGURE_ENGAGEMENT,
-     *     REQ_NODE_STATE,
-     *     REQ_SCAN
-     * } type
+     * enum message_type type
      * }
      */
     public static int type(MemorySegment struct) {
@@ -145,15 +113,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * enum {
-     *     REQ_FLASH_BEGIN,
-     *     REQ_FLASH_DATA,
-     *     REQ_FLASH_DATA_END,
-     *     REQ_CONFIGURE_SHUTDOWN,
-     *     REQ_CONFIGURE_ENGAGEMENT,
-     *     REQ_NODE_STATE,
-     *     REQ_SCAN
-     * } type
+     * enum message_type type
      * }
      */
     public static void type(MemorySegment struct, int fieldValue) {
@@ -162,26 +122,23 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct flash_begin_req {
      *     uint8_t node_id;
-     *     uint16_t total_size;
-     *     uint8_t total_chunks;
+     *     uint16_t total_chunks;
      * }
      * }
      */
-    public static class flash_begin {
+    public static class flash_begin_req {
 
-        flash_begin() {
+        flash_begin_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_CHAR.withName("node_id"),
             MemoryLayout.paddingLayout(1),
-            protocol_h.C_SHORT.withName("total_size"),
-            protocol_h.C_CHAR.withName("total_chunks"),
-            MemoryLayout.paddingLayout(1)
-        ).withName("$anon$61:9");
+            protocol_h.C_SHORT.withName("total_chunks")
+        ).withName("flash_begin_req");
 
         /**
          * The layout of this struct
@@ -234,68 +191,24 @@ class request_msg {
             struct.set(node_id$LAYOUT, node_id$OFFSET, fieldValue);
         }
 
-        private static final OfShort total_size$LAYOUT = (OfShort)$LAYOUT.select(groupElement("total_size"));
+        private static final OfShort total_chunks$LAYOUT = (OfShort)$LAYOUT.select(groupElement("total_chunks"));
 
         /**
          * Layout for field:
          * {@snippet lang=c :
-         * uint16_t total_size
+         * uint16_t total_chunks
          * }
          */
-        public static final OfShort total_size$layout() {
-            return total_size$LAYOUT;
-        }
-
-        private static final long total_size$OFFSET = 2;
-
-        /**
-         * Offset for field:
-         * {@snippet lang=c :
-         * uint16_t total_size
-         * }
-         */
-        public static final long total_size$offset() {
-            return total_size$OFFSET;
-        }
-
-        /**
-         * Getter for field:
-         * {@snippet lang=c :
-         * uint16_t total_size
-         * }
-         */
-        public static short total_size(MemorySegment struct) {
-            return struct.get(total_size$LAYOUT, total_size$OFFSET);
-        }
-
-        /**
-         * Setter for field:
-         * {@snippet lang=c :
-         * uint16_t total_size
-         * }
-         */
-        public static void total_size(MemorySegment struct, short fieldValue) {
-            struct.set(total_size$LAYOUT, total_size$OFFSET, fieldValue);
-        }
-
-        private static final OfByte total_chunks$LAYOUT = (OfByte)$LAYOUT.select(groupElement("total_chunks"));
-
-        /**
-         * Layout for field:
-         * {@snippet lang=c :
-         * uint8_t total_chunks
-         * }
-         */
-        public static final OfByte total_chunks$layout() {
+        public static final OfShort total_chunks$layout() {
             return total_chunks$LAYOUT;
         }
 
-        private static final long total_chunks$OFFSET = 4;
+        private static final long total_chunks$OFFSET = 2;
 
         /**
          * Offset for field:
          * {@snippet lang=c :
-         * uint8_t total_chunks
+         * uint16_t total_chunks
          * }
          */
         public static final long total_chunks$offset() {
@@ -305,20 +218,20 @@ class request_msg {
         /**
          * Getter for field:
          * {@snippet lang=c :
-         * uint8_t total_chunks
+         * uint16_t total_chunks
          * }
          */
-        public static byte total_chunks(MemorySegment struct) {
+        public static short total_chunks(MemorySegment struct) {
             return struct.get(total_chunks$LAYOUT, total_chunks$OFFSET);
         }
 
         /**
          * Setter for field:
          * {@snippet lang=c :
-         * uint8_t total_chunks
+         * uint16_t total_chunks
          * }
          */
-        public static void total_chunks(MemorySegment struct, byte fieldValue) {
+        public static void total_chunks(MemorySegment struct, short fieldValue) {
             struct.set(total_chunks$LAYOUT, total_chunks$OFFSET, fieldValue);
         }
 
@@ -367,32 +280,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout flash_begin$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("flash_begin"));
+    private static final GroupLayout flash_begin$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("flash_begin"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     uint16_t total_size;
-     *     uint8_t total_chunks;
-     * } flash_begin
+     * struct flash_begin_req flash_begin
      * }
      */
     public static final GroupLayout flash_begin$layout() {
         return flash_begin$LAYOUT;
     }
 
-    private static final long flash_begin$OFFSET = 8;
+    private static final long flash_begin$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     uint16_t total_size;
-     *     uint8_t total_chunks;
-     * } flash_begin
+     * struct flash_begin_req flash_begin
      * }
      */
     public static final long flash_begin$offset() {
@@ -402,11 +307,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     uint16_t total_size;
-     *     uint8_t total_chunks;
-     * } flash_begin
+     * struct flash_begin_req flash_begin
      * }
      */
     public static MemorySegment flash_begin(MemorySegment struct) {
@@ -416,11 +317,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     uint16_t total_size;
-     *     uint8_t total_chunks;
-     * } flash_begin
+     * struct flash_begin_req flash_begin
      * }
      */
     public static void flash_begin(MemorySegment struct, MemorySegment fieldValue) {
@@ -429,24 +326,29 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct flash_data_req {
      *     uint8_t chunk_idx;
      *     uint8_t crc;
-     *     uint8_t data[128];
+     *     uint16_t chunk_offset;
+     *     uint8_t chunk_size;
+     *     uint8_t chunk[16];
      * }
      * }
      */
-    public static class flash_data {
+    public static class flash_data_req {
 
-        flash_data() {
+        flash_data_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_CHAR.withName("chunk_idx"),
             protocol_h.C_CHAR.withName("crc"),
-            MemoryLayout.sequenceLayout(128, protocol_h.C_CHAR).withName("data")
-        ).withName("$anon$67:9");
+            protocol_h.C_SHORT.withName("chunk_offset"),
+            protocol_h.C_CHAR.withName("chunk_size"),
+            MemoryLayout.sequenceLayout(16, protocol_h.C_CHAR).withName("chunk"),
+            MemoryLayout.paddingLayout(1)
+        ).withName("flash_data_req");
 
         /**
          * The layout of this struct
@@ -543,81 +445,169 @@ class request_msg {
             struct.set(crc$LAYOUT, crc$OFFSET, fieldValue);
         }
 
-        private static final SequenceLayout data$LAYOUT = (SequenceLayout)$LAYOUT.select(groupElement("data"));
+        private static final OfShort chunk_offset$LAYOUT = (OfShort)$LAYOUT.select(groupElement("chunk_offset"));
 
         /**
          * Layout for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint16_t chunk_offset
          * }
          */
-        public static final SequenceLayout data$layout() {
-            return data$LAYOUT;
+        public static final OfShort chunk_offset$layout() {
+            return chunk_offset$LAYOUT;
         }
 
-        private static final long data$OFFSET = 2;
+        private static final long chunk_offset$OFFSET = 2;
 
         /**
          * Offset for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint16_t chunk_offset
          * }
          */
-        public static final long data$offset() {
-            return data$OFFSET;
+        public static final long chunk_offset$offset() {
+            return chunk_offset$OFFSET;
         }
 
         /**
          * Getter for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint16_t chunk_offset
          * }
          */
-        public static MemorySegment data(MemorySegment struct) {
-            return struct.asSlice(data$OFFSET, data$LAYOUT.byteSize());
+        public static short chunk_offset(MemorySegment struct) {
+            return struct.get(chunk_offset$LAYOUT, chunk_offset$OFFSET);
         }
 
         /**
          * Setter for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint16_t chunk_offset
          * }
          */
-        public static void data(MemorySegment struct, MemorySegment fieldValue) {
-            MemorySegment.copy(fieldValue, 0L, struct, data$OFFSET, data$LAYOUT.byteSize());
+        public static void chunk_offset(MemorySegment struct, short fieldValue) {
+            struct.set(chunk_offset$LAYOUT, chunk_offset$OFFSET, fieldValue);
         }
 
-        private static long[] data$DIMS = { 128 };
+        private static final OfByte chunk_size$LAYOUT = (OfByte)$LAYOUT.select(groupElement("chunk_size"));
+
+        /**
+         * Layout for field:
+         * {@snippet lang=c :
+         * uint8_t chunk_size
+         * }
+         */
+        public static final OfByte chunk_size$layout() {
+            return chunk_size$LAYOUT;
+        }
+
+        private static final long chunk_size$OFFSET = 4;
+
+        /**
+         * Offset for field:
+         * {@snippet lang=c :
+         * uint8_t chunk_size
+         * }
+         */
+        public static final long chunk_size$offset() {
+            return chunk_size$OFFSET;
+        }
+
+        /**
+         * Getter for field:
+         * {@snippet lang=c :
+         * uint8_t chunk_size
+         * }
+         */
+        public static byte chunk_size(MemorySegment struct) {
+            return struct.get(chunk_size$LAYOUT, chunk_size$OFFSET);
+        }
+
+        /**
+         * Setter for field:
+         * {@snippet lang=c :
+         * uint8_t chunk_size
+         * }
+         */
+        public static void chunk_size(MemorySegment struct, byte fieldValue) {
+            struct.set(chunk_size$LAYOUT, chunk_size$OFFSET, fieldValue);
+        }
+
+        private static final SequenceLayout chunk$LAYOUT = (SequenceLayout)$LAYOUT.select(groupElement("chunk"));
+
+        /**
+         * Layout for field:
+         * {@snippet lang=c :
+         * uint8_t chunk[16]
+         * }
+         */
+        public static final SequenceLayout chunk$layout() {
+            return chunk$LAYOUT;
+        }
+
+        private static final long chunk$OFFSET = 5;
+
+        /**
+         * Offset for field:
+         * {@snippet lang=c :
+         * uint8_t chunk[16]
+         * }
+         */
+        public static final long chunk$offset() {
+            return chunk$OFFSET;
+        }
+
+        /**
+         * Getter for field:
+         * {@snippet lang=c :
+         * uint8_t chunk[16]
+         * }
+         */
+        public static MemorySegment chunk(MemorySegment struct) {
+            return struct.asSlice(chunk$OFFSET, chunk$LAYOUT.byteSize());
+        }
+
+        /**
+         * Setter for field:
+         * {@snippet lang=c :
+         * uint8_t chunk[16]
+         * }
+         */
+        public static void chunk(MemorySegment struct, MemorySegment fieldValue) {
+            MemorySegment.copy(fieldValue, 0L, struct, chunk$OFFSET, chunk$LAYOUT.byteSize());
+        }
+
+        private static long[] chunk$DIMS = { 16 };
 
         /**
          * Dimensions for array field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint8_t chunk[16]
          * }
          */
-        public static long[] data$dimensions() {
-            return data$DIMS;
+        public static long[] chunk$dimensions() {
+            return chunk$DIMS;
         }
-        private static final VarHandle data$ELEM_HANDLE = data$LAYOUT.varHandle(sequenceElement());
+        private static final VarHandle chunk$ELEM_HANDLE = chunk$LAYOUT.varHandle(sequenceElement());
 
         /**
          * Indexed getter for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint8_t chunk[16]
          * }
          */
-        public static byte data(MemorySegment struct, long index0) {
-            return (byte)data$ELEM_HANDLE.get(struct, 0L, index0);
+        public static byte chunk(MemorySegment struct, long index0) {
+            return (byte)chunk$ELEM_HANDLE.get(struct, 0L, index0);
         }
 
         /**
          * Indexed setter for field:
          * {@snippet lang=c :
-         * uint8_t data[128]
+         * uint8_t chunk[16]
          * }
          */
-        public static void data(MemorySegment struct, long index0, byte fieldValue) {
-            data$ELEM_HANDLE.set(struct, 0L, index0, fieldValue);
+        public static void chunk(MemorySegment struct, long index0, byte fieldValue) {
+            chunk$ELEM_HANDLE.set(struct, 0L, index0, fieldValue);
         }
 
         /**
@@ -665,32 +655,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout flash_data$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("flash_data"));
+    private static final GroupLayout flash_data$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("flash_data"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t chunk_idx;
-     *     uint8_t crc;
-     *     uint8_t data[128];
-     * } flash_data
+     * struct flash_data_req flash_data
      * }
      */
     public static final GroupLayout flash_data$layout() {
         return flash_data$LAYOUT;
     }
 
-    private static final long flash_data$OFFSET = 8;
+    private static final long flash_data$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t chunk_idx;
-     *     uint8_t crc;
-     *     uint8_t data[128];
-     * } flash_data
+     * struct flash_data_req flash_data
      * }
      */
     public static final long flash_data$offset() {
@@ -700,11 +682,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t chunk_idx;
-     *     uint8_t crc;
-     *     uint8_t data[128];
-     * } flash_data
+     * struct flash_data_req flash_data
      * }
      */
     public static MemorySegment flash_data(MemorySegment struct) {
@@ -714,11 +692,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t chunk_idx;
-     *     uint8_t crc;
-     *     uint8_t data[128];
-     * } flash_data
+     * struct flash_data_req flash_data
      * }
      */
     public static void flash_data(MemorySegment struct, MemorySegment fieldValue) {
@@ -728,7 +702,6 @@ class request_msg {
     /**
      * {@snippet lang=c :
      * struct {
-     *     uint64_t crc;
      * }
      * }
      */
@@ -739,58 +712,14 @@ class request_msg {
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-            protocol_h.C_LONG_LONG.withName("crc")
-        ).withName("$anon$73:9");
+
+        ).withName("$anon$92:9");
 
         /**
          * The layout of this struct
          */
         public static final GroupLayout layout() {
             return $LAYOUT;
-        }
-
-        private static final OfLong crc$LAYOUT = (OfLong)$LAYOUT.select(groupElement("crc"));
-
-        /**
-         * Layout for field:
-         * {@snippet lang=c :
-         * uint64_t crc
-         * }
-         */
-        public static final OfLong crc$layout() {
-            return crc$LAYOUT;
-        }
-
-        private static final long crc$OFFSET = 0;
-
-        /**
-         * Offset for field:
-         * {@snippet lang=c :
-         * uint64_t crc
-         * }
-         */
-        public static final long crc$offset() {
-            return crc$OFFSET;
-        }
-
-        /**
-         * Getter for field:
-         * {@snippet lang=c :
-         * uint64_t crc
-         * }
-         */
-        public static long crc(MemorySegment struct) {
-            return struct.get(crc$LAYOUT, crc$OFFSET);
-        }
-
-        /**
-         * Setter for field:
-         * {@snippet lang=c :
-         * uint64_t crc
-         * }
-         */
-        public static void crc(MemorySegment struct, long fieldValue) {
-            struct.set(crc$LAYOUT, crc$OFFSET, fieldValue);
         }
 
         /**
@@ -838,13 +767,12 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout flash_data_end$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("flash_data_end"));
+    private static final GroupLayout flash_data_end$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("flash_data_end"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
      * struct {
-     *     uint64_t crc;
      * } flash_data_end
      * }
      */
@@ -852,13 +780,12 @@ class request_msg {
         return flash_data_end$LAYOUT;
     }
 
-    private static final long flash_data_end$OFFSET = 8;
+    private static final long flash_data_end$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
      * struct {
-     *     uint64_t crc;
      * } flash_data_end
      * }
      */
@@ -870,7 +797,6 @@ class request_msg {
      * Getter for field:
      * {@snippet lang=c :
      * struct {
-     *     uint64_t crc;
      * } flash_data_end
      * }
      */
@@ -882,7 +808,6 @@ class request_msg {
      * Setter for field:
      * {@snippet lang=c :
      * struct {
-     *     uint64_t crc;
      * } flash_data_end
      * }
      */
@@ -892,22 +817,22 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct cfg_shtdn_req {
      *     uint8_t node_id;
      *     bool shutdown;
      * }
      * }
      */
-    public static class configure_shutdown {
+    public static class cfg_shtdn_req {
 
-        configure_shutdown() {
+        cfg_shtdn_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_CHAR.withName("node_id"),
             protocol_h.C_BOOL.withName("shutdown")
-        ).withName("$anon$77:9");
+        ).withName("cfg_shtdn_req");
 
         /**
          * The layout of this struct
@@ -1049,30 +974,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout configure_shutdown$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("configure_shutdown"));
+    private static final GroupLayout configure_shutdown$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("configure_shutdown"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool shutdown;
-     * } configure_shutdown
+     * struct cfg_shtdn_req configure_shutdown
      * }
      */
     public static final GroupLayout configure_shutdown$layout() {
         return configure_shutdown$LAYOUT;
     }
 
-    private static final long configure_shutdown$OFFSET = 8;
+    private static final long configure_shutdown$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool shutdown;
-     * } configure_shutdown
+     * struct cfg_shtdn_req configure_shutdown
      * }
      */
     public static final long configure_shutdown$offset() {
@@ -1082,10 +1001,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool shutdown;
-     * } configure_shutdown
+     * struct cfg_shtdn_req configure_shutdown
      * }
      */
     public static MemorySegment configure_shutdown(MemorySegment struct) {
@@ -1095,10 +1011,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool shutdown;
-     * } configure_shutdown
+     * struct cfg_shtdn_req configure_shutdown
      * }
      */
     public static void configure_shutdown(MemorySegment struct, MemorySegment fieldValue) {
@@ -1107,22 +1020,22 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct cfg_engage_req {
      *     uint8_t node_id;
      *     bool engaged;
      * }
      * }
      */
-    public static class configure_engagement {
+    public static class cfg_engage_req {
 
-        configure_engagement() {
+        cfg_engage_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_CHAR.withName("node_id"),
             protocol_h.C_BOOL.withName("engaged")
-        ).withName("$anon$82:9");
+        ).withName("cfg_engage_req");
 
         /**
          * The layout of this struct
@@ -1264,30 +1177,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout configure_engagement$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("configure_engagement"));
+    private static final GroupLayout configure_engagement$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("configure_engagement"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool engaged;
-     * } configure_engagement
+     * struct cfg_engage_req configure_engagement
      * }
      */
     public static final GroupLayout configure_engagement$layout() {
         return configure_engagement$LAYOUT;
     }
 
-    private static final long configure_engagement$OFFSET = 8;
+    private static final long configure_engagement$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool engaged;
-     * } configure_engagement
+     * struct cfg_engage_req configure_engagement
      * }
      */
     public static final long configure_engagement$offset() {
@@ -1297,10 +1204,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool engaged;
-     * } configure_engagement
+     * struct cfg_engage_req configure_engagement
      * }
      */
     public static MemorySegment configure_engagement(MemorySegment struct) {
@@ -1310,10 +1214,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     *     bool engaged;
-     * } configure_engagement
+     * struct cfg_engage_req configure_engagement
      * }
      */
     public static void configure_engagement(MemorySegment struct, MemorySegment fieldValue) {
@@ -1322,20 +1223,20 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct scan_req {
      *     bool include_states;
      * }
      * }
      */
-    public static class scan {
+    public static class scan_req {
 
-        scan() {
+        scan_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_BOOL.withName("include_states")
-        ).withName("$anon$87:9");
+        ).withName("scan_req");
 
         /**
          * The layout of this struct
@@ -1433,28 +1334,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout scan$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("scan"));
+    private static final GroupLayout scan$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("scan"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     bool include_states;
-     * } scan
+     * struct scan_req scan
      * }
      */
     public static final GroupLayout scan$layout() {
         return scan$LAYOUT;
     }
 
-    private static final long scan$OFFSET = 8;
+    private static final long scan$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     bool include_states;
-     * } scan
+     * struct scan_req scan
      * }
      */
     public static final long scan$offset() {
@@ -1464,9 +1361,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     bool include_states;
-     * } scan
+     * struct scan_req scan
      * }
      */
     public static MemorySegment scan(MemorySegment struct) {
@@ -1476,9 +1371,7 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     bool include_states;
-     * } scan
+     * struct scan_req scan
      * }
      */
     public static void scan(MemorySegment struct, MemorySegment fieldValue) {
@@ -1487,20 +1380,20 @@ class request_msg {
 
     /**
      * {@snippet lang=c :
-     * struct {
+     * struct node_state_req {
      *     uint8_t node_id;
      * }
      * }
      */
-    public static class node_state {
+    public static class node_state_req {
 
-        node_state() {
+        node_state_req() {
             // Should not be called directly
         }
 
         private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
             protocol_h.C_CHAR.withName("node_id")
-        ).withName("$anon$91:9");
+        ).withName("node_state_req");
 
         /**
          * The layout of this struct
@@ -1598,28 +1491,24 @@ class request_msg {
         }
     }
 
-    private static final GroupLayout node_state$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$60:5"), groupElement("node_state"));
+    private static final GroupLayout node_state$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("node_state"));
 
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     * } node_state
+     * struct node_state_req node_state
      * }
      */
     public static final GroupLayout node_state$layout() {
         return node_state$LAYOUT;
     }
 
-    private static final long node_state$OFFSET = 8;
+    private static final long node_state$OFFSET = 4;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     * } node_state
+     * struct node_state_req node_state
      * }
      */
     public static final long node_state$offset() {
@@ -1629,9 +1518,7 @@ class request_msg {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     * } node_state
+     * struct node_state_req node_state
      * }
      */
     public static MemorySegment node_state(MemorySegment struct) {
@@ -1641,13 +1528,55 @@ class request_msg {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * struct {
-     *     uint8_t node_id;
-     * } node_state
+     * struct node_state_req node_state
      * }
      */
     public static void node_state(MemorySegment struct, MemorySegment fieldValue) {
         MemorySegment.copy(fieldValue, 0L, struct, node_state$OFFSET, node_state$LAYOUT.byteSize());
+    }
+
+    private static final GroupLayout set_node_info$LAYOUT = (GroupLayout)$LAYOUT.select(groupElement("$anon$78:5"), groupElement("set_node_info"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * struct node_configuration set_node_info
+     * }
+     */
+    public static final GroupLayout set_node_info$layout() {
+        return set_node_info$LAYOUT;
+    }
+
+    private static final long set_node_info$OFFSET = 4;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * struct node_configuration set_node_info
+     * }
+     */
+    public static final long set_node_info$offset() {
+        return set_node_info$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * struct node_configuration set_node_info
+     * }
+     */
+    public static MemorySegment set_node_info(MemorySegment struct) {
+        return struct.asSlice(set_node_info$OFFSET, set_node_info$LAYOUT.byteSize());
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * struct node_configuration set_node_info
+     * }
+     */
+    public static void set_node_info(MemorySegment struct, MemorySegment fieldValue) {
+        MemorySegment.copy(fieldValue, 0L, struct, set_node_info$OFFSET, set_node_info$LAYOUT.byteSize());
     }
 
     /**

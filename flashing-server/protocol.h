@@ -40,21 +40,26 @@ struct node_info {
         NODE_TYPE_SOURCE,
         NODE_TYPE_LOAD
     } type;
-    uint8_t node_id;
     uint8_t owner_id;
 };
 
-struct bitbang_spi_config {
-	uint8_t rst, clk, mosi, miso;
-	uint32_t clock_rate;
+struct node_spi_config {
+	enum { NODE_HSPI = 1, NODE_VSPI = 2 } spi_attiny, spi_adc, spi_sr;
+	uint8_t ss_attiny, ss_adc, ss_sr;
+
+	uint8_t shutdown_pin_sr, engaged_pin_sr;
+
+	enum {
+		ADC_CHAN_01, ADC_CHAN_23, ADC_CHAN_45, ADC_CHAN_67
+	} adc_chan;
 };
 
-struct node_configuration {
+struct device_configuration {
 	struct {
 		bool connected;
-		struct bitbang_spi_config spi_config;
+		struct node_spi_config spi_config;
 		struct node_info info;
-	} busses[2][2];
+	} nodes[4];
 };
 
 struct device_info {
@@ -62,7 +67,7 @@ struct device_info {
     struct node_info nodes[];
 };
 
-enum message_type {
+typedef enum message_type {
 	FLASH_BEGIN,
 	FLASH_DATA,
 	FLASH_DATA_END,
@@ -71,18 +76,18 @@ enum message_type {
 	NODE_STATE,
 	SCAN,
 	SET_NODE_INFO
-};
+} message_type;
 
 struct request_msg {
     enum message_type type;
 
     union {
-        struct {
+        struct flash_begin_req {
             uint8_t node_id;
-            uint8_t total_chunks;
+            uint16_t total_chunks;
         } flash_begin;
 
-        struct {
+        struct flash_data_req {
         	uint8_t chunk_idx;
         	uint8_t crc;
 			uint16_t chunk_offset;
@@ -92,25 +97,25 @@ struct request_msg {
 
         struct {} flash_data_end;
 
-        struct {
+        struct cfg_shtdn_req {
             uint8_t node_id;
             bool shutdown;
         } configure_shutdown;
 
-        struct {
+        struct cfg_engage_req {
             uint8_t node_id;
             bool engaged;
         } configure_engagement;
 
-        struct {
+        struct scan_req {
         	bool include_states;
         } scan;
 
-        struct {
+        struct node_state_req {
             uint8_t node_id;
         } node_state;
 
-		struct node_configuration set_node_info;
+		struct device_configuration set_node_info;
     };
 };
 
@@ -125,7 +130,8 @@ struct response_msg {
         struct {} configure_shutdown;
         struct {} configure_engagement;
         struct device_info scan;
-        struct {
+        struct info_state {
+			uint8_t node_idx;
         	struct node_info info;
         	struct node_state state;
         } info_and_state;

@@ -22,6 +22,6 @@ struct chunk {
 	uint8_t *data;
 };
 
-esp_err_t program(struct bitbang_spi_config *spi_config, size_t chunks, struct chunk const *data);
+esp_err_t program(struct node_spi_config *spi_config, size_t chunks, struct chunk const *data);
 
 #endif // _ESP_AVRISP_H

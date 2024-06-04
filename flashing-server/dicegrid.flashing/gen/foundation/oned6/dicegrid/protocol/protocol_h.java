@@ -54,14 +54,14 @@ class protocol_h {
     public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
-    static final int CHUNK_SIZE = (int)128L;
+    static final int MAX_CHUNK_SIZE = (int)16L;
     /**
      * {@snippet lang=c :
-     * #define CHUNK_SIZE 128
+     * #define MAX_CHUNK_SIZE 16
      * }
      */
-    public static int CHUNK_SIZE() {
-        return CHUNK_SIZE;
+    public static int MAX_CHUNK_SIZE() {
+        return MAX_CHUNK_SIZE;
     }
     static final int TRIP_REASON_NONE = (int)0L;
     /**
@@ -135,131 +135,77 @@ class protocol_h {
     public static int NODE_TYPE_LOAD() {
         return NODE_TYPE_LOAD;
     }
-    static final int REQ_FLASH_BEGIN = (int)0L;
+    static final int FLASH_BEGIN = (int)0L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_FLASH_BEGIN = 0
+     * enum message_type.FLASH_BEGIN = 0
      * }
      */
-    public static int REQ_FLASH_BEGIN() {
-        return REQ_FLASH_BEGIN;
+    public static int FLASH_BEGIN() {
+        return FLASH_BEGIN;
     }
-    static final int REQ_FLASH_DATA = (int)1L;
+    static final int FLASH_DATA = (int)1L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_FLASH_DATA = 1
+     * enum message_type.FLASH_DATA = 1
      * }
      */
-    public static int REQ_FLASH_DATA() {
-        return REQ_FLASH_DATA;
+    public static int FLASH_DATA() {
+        return FLASH_DATA;
     }
-    static final int REQ_FLASH_DATA_END = (int)2L;
+    static final int FLASH_DATA_END = (int)2L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_FLASH_DATA_END = 2
+     * enum message_type.FLASH_DATA_END = 2
      * }
      */
-    public static int REQ_FLASH_DATA_END() {
-        return REQ_FLASH_DATA_END;
+    public static int FLASH_DATA_END() {
+        return FLASH_DATA_END;
     }
-    static final int REQ_CONFIGURE_SHUTDOWN = (int)3L;
+    static final int CONFIGURE_SHUTDOWN = (int)3L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_CONFIGURE_SHUTDOWN = 3
+     * enum message_type.CONFIGURE_SHUTDOWN = 3
      * }
      */
-    public static int REQ_CONFIGURE_SHUTDOWN() {
-        return REQ_CONFIGURE_SHUTDOWN;
+    public static int CONFIGURE_SHUTDOWN() {
+        return CONFIGURE_SHUTDOWN;
     }
-    static final int REQ_CONFIGURE_ENGAGEMENT = (int)4L;
+    static final int CONFIGURE_ENGAGEMENT = (int)4L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_CONFIGURE_ENGAGEMENT = 4
+     * enum message_type.CONFIGURE_ENGAGEMENT = 4
      * }
      */
-    public static int REQ_CONFIGURE_ENGAGEMENT() {
-        return REQ_CONFIGURE_ENGAGEMENT;
+    public static int CONFIGURE_ENGAGEMENT() {
+        return CONFIGURE_ENGAGEMENT;
     }
-    static final int REQ_NODE_STATE = (int)5L;
+    static final int NODE_STATE = (int)5L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_NODE_STATE = 5
+     * enum message_type.NODE_STATE = 5
      * }
      */
-    public static int REQ_NODE_STATE() {
-        return REQ_NODE_STATE;
+    public static int NODE_STATE() {
+        return NODE_STATE;
     }
-    static final int REQ_SCAN = (int)6L;
+    static final int SCAN = (int)6L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.REQ_SCAN = 6
+     * enum message_type.SCAN = 6
      * }
      */
-    public static int REQ_SCAN() {
-        return REQ_SCAN;
+    public static int SCAN() {
+        return SCAN;
     }
-    static final int RES_FLASH_BEGIN = (int)0L;
+    static final int SET_NODE_INFO = (int)7L;
     /**
      * {@snippet lang=c :
-     * enum <anonymous>.RES_FLASH_BEGIN = 0
+     * enum message_type.SET_NODE_INFO = 7
      * }
      */
-    public static int RES_FLASH_BEGIN() {
-        return RES_FLASH_BEGIN;
-    }
-    static final int RES_FLASH_DATA = (int)1L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_FLASH_DATA = 1
-     * }
-     */
-    public static int RES_FLASH_DATA() {
-        return RES_FLASH_DATA;
-    }
-    static final int RES_FLASH_DATA_END = (int)2L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_FLASH_DATA_END = 2
-     * }
-     */
-    public static int RES_FLASH_DATA_END() {
-        return RES_FLASH_DATA_END;
-    }
-    static final int RES_CONFIGURE_SHUTDOWN = (int)3L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_CONFIGURE_SHUTDOWN = 3
-     * }
-     */
-    public static int RES_CONFIGURE_SHUTDOWN() {
-        return RES_CONFIGURE_SHUTDOWN;
-    }
-    static final int RES_CONFIGURE_ENGAGEMENT = (int)4L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_CONFIGURE_ENGAGEMENT = 4
-     * }
-     */
-    public static int RES_CONFIGURE_ENGAGEMENT() {
-        return RES_CONFIGURE_ENGAGEMENT;
-    }
-    static final int RES_SCAN = (int)5L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_SCAN = 5
-     * }
-     */
-    public static int RES_SCAN() {
-        return RES_SCAN;
-    }
-    static final int RES_NODE_STATE = (int)6L;
-    /**
-     * {@snippet lang=c :
-     * enum <anonymous>.RES_NODE_STATE = 6
-     * }
-     */
-    public static int RES_NODE_STATE() {
-        return RES_NODE_STATE;
+    public static int SET_NODE_INFO() {
+        return SET_NODE_INFO;
     }
 }
 

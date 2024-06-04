@@ -8,6 +8,8 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <driver/spi_master.h>
+#include <driver/gpio.h>
 
 uint8_t *parse_hex_string(char const *hex_string) {
 	size_t len = strlen(hex_string);
@@ -25,52 +27,48 @@ uint8_t *parse_hex_string(char const *hex_string) {
 	return data;
 }
 
-static uint32_t btog(uint32_t num)
-{
-	return (num>>1) ^ num;
+static uint32_t btog(uint32_t num) {
+	return (num >> 1) ^ num;
 }
 
-void app_main_actual(void*) {
-	esp_log_level_set("avrisp", ESP_LOG_DEBUG);
+void app_main(void) {
+//	esp_log_level_set("avrisp", ESP_LOG_VERBOSE);
 
-	struct bitbang_spi_config config = (struct bitbang_spi_config) {
-		.mosi = 0, .miso = 2, .clk = 4, .rst = 23, .clock_rate = 1000000 / 30
+//	struct node_spi_config config = (struct node_spi_config) {
+//			.mosi = 0, .miso = 2, .clk = 4, .rst = 23, .clock_rate = 1000000 / 6
+//	};
+
+	struct node_spi_config config = (struct node_spi_config) {
+		.spi_attiny = NODE_HSPI, .ss_attiny = 23
 	};
 
-//	test_page[0] = 0b11111110;
-
-	struct chunk chunks[] = {
-			{
-					.size = 16,
-					.start_offset = 0,
-					.data = parse_hex_string("0EC015C014C013C012C011C010C00FC064"),
-			},
-			{
-					.size = 0x10,
-					.start_offset = 0x0010,
-					.data = parse_hex_string("0EC00DC00CC00BC00AC009C008C01124"),
-			},
-			{
-					.size = 0x10,
-					.start_offset = 0x0020,
-					.data = parse_hex_string("1FBECFE5D2E0DEBFCDBF02D011C0E8CF"),
-			},
-			{
-					.size = 0x10,
-					.start_offset = 0x0030,
-					.data = parse_hex_string("81E087BB91E088B3892788BB2FEF34E3"),
-			},
-			{
-					.size = 0x10,
-					.start_offset = 0x0040,
-					.data = parse_hex_string("8CE0215030408040E1F700C00000F3CF"),
-			},
-			{
-					.size = 0x04,
-					.start_offset = 0x0050,
-					.data = parse_hex_string("F894FFCF"),
-			}
+	spi_bus_config_t bus_cfg = {
+			.mosi_io_num = 0,
+			.miso_io_num = 2,
+			.sclk_io_num = 4,
+			.flags = SPICOMMON_BUSFLAG_GPIO_PINS | SPICOMMON_BUSFLAG_MASTER
 	};
+
+	gpio_set_direction(config.ss_attiny, GPIO_MODE_OUTPUT);
+	gpio_set_direction(bus_cfg.mosi_io_num, GPIO_MODE_OUTPUT);
+	gpio_set_direction(bus_cfg.miso_io_num, GPIO_MODE_INPUT);
+	gpio_set_direction(bus_cfg.sclk_io_num, GPIO_MODE_OUTPUT);
+
+	ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &bus_cfg, SPI_DMA_DISABLED));
+	srand(0);
+	static struct chunk chunks[512];
+	for (int i = 0; i < 512; i++) {
+		size_t size = 16;
+		uint8_t *data = calloc(size, 1);
+		assert (data);
+		for (size_t j = 0; j < size; j++) {
+			data[j] = rand();
+		}
+
+		struct chunk chunk = {.start_offset = i * 16, .size = 16, .data = data};
+		chunks[i] = chunk;
+	}
+
 //	struct chunk chunks[] = {{0x10, 0x0000, parse_hex_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") },
 //							 {0x10, 0x0010, parse_hex_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") },
 //							 {0x10, 0x0020, parse_hex_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") },
@@ -82,18 +80,13 @@ void app_main_actual(void*) {
 
 //		struct chunk test_chunk = {0, 96 + 2, test_page};
 //	struct chunk test_chunk2 = {0, 128, test_page};
-	esp_err_t  status;
+	esp_err_t status;
 //	esp_err_t  status = program(&config, 1, &test_chunk);
 //	ESP_LOGI("main", "Programming status: %s", esp_err_to_name(status));
-	  status = program(&config, 6, chunks);
+	status = program(&config, 512, chunks);
 	ESP_LOGI("main", "Programming status: %s", esp_err_to_name(status));
 
 	while (1) {
 		vTaskDelay(portMAX_DELAY);
 	}
-}
-
-void app_main(void) {
-	// run the actual main function with top priority
-	xTaskCreate(app_main_actual, "app_main_actual", 4096, NULL, tskIDLE_PRIORITY, NULL);
 }

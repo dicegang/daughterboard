@@ -19,7 +19,6 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  *         NODE_TYPE_SOURCE,
  *         NODE_TYPE_LOAD
  *     } type;
- *     uint8_t node_id;
  *     uint8_t owner_id;
  * }
  * }
@@ -32,9 +31,8 @@ class node_info {
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
         protocol_h.C_INT.withName("type"),
-        protocol_h.C_CHAR.withName("node_id"),
         protocol_h.C_CHAR.withName("owner_id"),
-        MemoryLayout.paddingLayout(2)
+        MemoryLayout.paddingLayout(3)
     ).withName("node_info");
 
     /**
@@ -100,50 +98,6 @@ class node_info {
         struct.set(type$LAYOUT, type$OFFSET, fieldValue);
     }
 
-    private static final OfByte node_id$LAYOUT = (OfByte)$LAYOUT.select(groupElement("node_id"));
-
-    /**
-     * Layout for field:
-     * {@snippet lang=c :
-     * uint8_t node_id
-     * }
-     */
-    public static final OfByte node_id$layout() {
-        return node_id$LAYOUT;
-    }
-
-    private static final long node_id$OFFSET = 4;
-
-    /**
-     * Offset for field:
-     * {@snippet lang=c :
-     * uint8_t node_id
-     * }
-     */
-    public static final long node_id$offset() {
-        return node_id$OFFSET;
-    }
-
-    /**
-     * Getter for field:
-     * {@snippet lang=c :
-     * uint8_t node_id
-     * }
-     */
-    public static byte node_id(MemorySegment struct) {
-        return struct.get(node_id$LAYOUT, node_id$OFFSET);
-    }
-
-    /**
-     * Setter for field:
-     * {@snippet lang=c :
-     * uint8_t node_id
-     * }
-     */
-    public static void node_id(MemorySegment struct, byte fieldValue) {
-        struct.set(node_id$LAYOUT, node_id$OFFSET, fieldValue);
-    }
-
     private static final OfByte owner_id$LAYOUT = (OfByte)$LAYOUT.select(groupElement("owner_id"));
 
     /**
@@ -156,7 +110,7 @@ class node_info {
         return owner_id$LAYOUT;
     }
 
-    private static final long owner_id$OFFSET = 5;
+    private static final long owner_id$OFFSET = 4;
 
     /**
      * Offset for field:

@@ -29,8 +29,8 @@ class WirelessDicegridConnection implements GridConnection {
 		lock.lockInterruptibly();
 		try {
 			var message = request_msg.allocate(Arena.ofAuto());
-			request_msg.type(message, REQ_SCAN());
-			request_msg.scan.include_states(request_msg.scan(message), false);
+			request_msg.type(message, SCAN());
+			request_msg.scan_req.include_states(request_msg.scan(message), false);
 
 			var responses = communicator.broadcast(message);
 
@@ -45,8 +45,8 @@ class WirelessDicegridConnection implements GridConnection {
 		lock.lockInterruptibly();
 		try {
 			var message = request_msg.allocate(Arena.ofAuto());
-			request_msg.type(message, REQ_SCAN());
-			request_msg.scan.include_states(request_msg.scan(message), true);
+			request_msg.type(message, SCAN());
+			request_msg.scan_req.include_states(request_msg.scan(message), true);
 
 			var responses = communicator.broadcast(message);
 
@@ -63,35 +63,34 @@ class WirelessDicegridConnection implements GridConnection {
 			if (firmware.length > 8192)
 				throw new IllegalArgumentException("firmware too large");
 
-			int chunkCount = switch (firmware.length % CHUNK_SIZE) {
-				case 0 -> firmware.length / CHUNK_SIZE;
-				default -> firmware.length / CHUNK_SIZE + 1;
+			int chunkCount = switch (firmware.length % MAX_CHUNK_SIZE) {
+				case 0 -> firmware.length / MAX_CHUNK_SIZE;
+				default -> firmware.length / MAX_CHUNK_SIZE + 1;
 			};
 
 			var message = request_msg.allocate(Arena.ofAuto());
 
-			request_msg.type(message, REQ_FLASH_BEGIN());
+			request_msg.type(message, FLASH_BEGIN());
 			var flashBegin = request_msg.flash_begin(message);
-			request_msg.flash_begin.node_id(flashBegin, address.nodeId());
-			request_msg.flash_begin.total_size(flashBegin, (short) firmware.length);
-			request_msg.flash_begin.total_chunks(flashBegin, (byte) chunkCount);
+			request_msg.flash_begin_req.node_id(flashBegin, address.nodeId());
+			request_msg.flash_begin_req.total_chunks(flashBegin, (byte) chunkCount);
 
 			expectOneOK(communicator.send(address.deviceMAC(), message));
 
 			int offset = 0;
 			int chunkRetryCount = 0;
 			while (offset < firmware.length) {
-				byte chunkIndex = (byte) (offset / CHUNK_SIZE);
-				byte chunkSize = (byte) Math.min(CHUNK_SIZE, firmware.length - offset);
+				byte chunkIndex = (byte) (offset / MAX_CHUNK_SIZE);
+				byte chunkSize = (byte) Math.min(MAX_CHUNK_SIZE, firmware.length - offset);
 
 				var currentChunk = MemorySegment.ofArray(firmware).asSlice(offset, chunkSize);
 
-				request_msg.type(message, REQ_FLASH_DATA());
+				request_msg.type(message, FLASH_DATA());
 
 				var flashData = request_msg.flash_data(message);
-				request_msg.flash_data.chunk_idx(flashData, chunkIndex);
-				request_msg.flash_data.crc(flashData, crc8(currentChunk));
-				request_msg.flash_data.data(flashData).copyFrom(currentChunk);
+				request_msg.flash_data_req.chunk_idx(flashData, chunkIndex);
+				request_msg.flash_data_req.crc(flashData, crc8(currentChunk));
+				request_msg.flash_data_req.chunk(flashData).copyFrom(currentChunk);
 
 				try {
 					expectOneOK(communicator.send(address.deviceMAC(), message));
@@ -108,9 +107,7 @@ class WirelessDicegridConnection implements GridConnection {
 				offset += chunkSize;
 			}
 
-			request_msg.type(message, REQ_FLASH_DATA_END());
-			request_msg.flash_data_end.crc(request_msg.flash_data_end(message), crc32(firmware));
-
+			request_msg.type(message, FLASH_DATA_END());
 			expectOneOK(communicator.send(address.deviceMAC(), message));
 		} finally {
 			lock.unlock();
@@ -176,9 +173,9 @@ class WirelessDicegridConnection implements GridConnection {
 		try (var arena = Arena.ofConfined()) {
 			var message = request_msg.allocate(arena);
 
-			request_msg.type(message, REQ_CONFIGURE_ENGAGEMENT());
-			request_msg.configure_engagement.node_id(request_msg.configure_engagement(message), address.nodeId());
-			request_msg.configure_engagement.engaged(request_msg.configure_engagement(message), engaged);
+			request_msg.type(message, CONFIGURE_ENGAGEMENT());
+			request_msg.cfg_engage_req.node_id(request_msg.configure_engagement(message), address.nodeId());
+			request_msg.cfg_engage_req.engaged(request_msg.configure_engagement(message), engaged);
 
 			var responses = communicator.send(address.deviceMAC(), message);
 			if (responses.length != 1) {
@@ -202,9 +199,9 @@ class WirelessDicegridConnection implements GridConnection {
 		try (var arena = Arena.ofConfined()) {
 			var message = request_msg.allocate(arena);
 
-			request_msg.type(message, REQ_CONFIGURE_SHUTDOWN());
-			request_msg.configure_shutdown.node_id(request_msg.configure_shutdown(message), address.nodeId());
-			request_msg.configure_shutdown.shutdown(request_msg.configure_shutdown(message), shutdown);
+			request_msg.type(message, CONFIGURE_SHUTDOWN());
+			request_msg.cfg_shtdn_req.node_id(request_msg.configure_shutdown(message), address.nodeId());
+			request_msg.cfg_shtdn_req.shutdown(request_msg.configure_shutdown(message), shutdown);
 
 			var responses = communicator.send(address.deviceMAC(), message);
 			if (responses.length != 1) {
@@ -228,8 +225,8 @@ class WirelessDicegridConnection implements GridConnection {
 		try (var arena = Arena.ofConfined()) {
 			var message = request_msg.allocate(arena);
 
-			request_msg.type(message, REQ_NODE_STATE());
-			request_msg.node_state.node_id(request_msg.node_state(message), address.nodeId());
+			request_msg.type(message, NODE_STATE());
+			request_msg.node_state_req.node_id(request_msg.node_state(message), address.nodeId());
 
 			var responses = communicator.send(address.deviceMAC(), message);
 			if (responses.length != 1) {
@@ -294,12 +291,12 @@ class WirelessDicegridConnection implements GridConnection {
 			var ok = response_msg.ok(data);
 
 			return switch (type) {
-				case RES_FLASH_BEGIN -> new FlashBegin(ok);
-				case RES_FLASH_DATA -> new FlashData(ok);
-				case RES_FLASH_DATA_END -> new FlashEnd(ok);
-				case RES_CONFIGURE_SHUTDOWN -> new ConfigureShutdown(ok);
-				case RES_CONFIGURE_ENGAGEMENT -> new ConfigureEngagement(ok);
-				case RES_SCAN -> {
+				case FLASH_BEGIN -> new FlashBegin(ok);
+				case FLASH_DATA -> new FlashData(ok);
+				case FLASH_DATA_END -> new FlashEnd(ok);
+				case CONFIGURE_SHUTDOWN -> new ConfigureShutdown(ok);
+				case CONFIGURE_ENGAGEMENT -> new ConfigureEngagement(ok);
+				case SCAN -> {
 					var inner = response_msg.scan(data);
 
 					var nodeCount = device_info.node_count(inner);
@@ -308,17 +305,18 @@ class WirelessDicegridConnection implements GridConnection {
 					var result = new NodeInfo[nodeCount];
 					for (byte i = 0; i < nodeCount; i++) {
 						var nodeInfo = nodeInfos.asSlice(i * node_info.sizeof(), node_info.layout());
-						result[i] = parseNodeInfo(sender, nodeInfo);
+						result[i] = parseNodeInfo(sender, i, nodeInfo);
 					}
 
 					yield new Scan(ok, result);
 				}
-				case RES_NODE_STATE -> {
+				case NODE_STATE -> {
 					var inner = response_msg.info_and_state(data);
-					var infoStruct = response_msg.info_and_state.info(inner);
-					var stateStruct = response_msg.info_and_state.state(inner);
+					var infoStruct = response_msg.info_state.info(inner);
+					var stateStruct = response_msg.info_state.state(inner);
+					byte idx = response_msg.info_state.node_idx(inner);
 
-					var info = parseNodeInfo(sender, infoStruct);
+					var info = parseNodeInfo(sender, idx, infoStruct);
 					var state = parseNodeState(sender, stateStruct);
 
 					yield new GetState(ok, info, state);
@@ -352,8 +350,7 @@ class WirelessDicegridConnection implements GridConnection {
 		};
 	}
 
-	private static NodeInfo parseNodeInfo(byte[] deviceMAC, MemorySegment struct) throws DeviceException.ProtocolError {
-		var id = node_info.node_id(struct);
+	private static NodeInfo parseNodeInfo(byte[] deviceMAC, byte idx, MemorySegment struct) throws DeviceException.ProtocolError {
 		var ownerID = node_info.owner_id(struct);
 		var nodeType = switch (node_info.type(struct)) {
 			case NODE_TYPE_SOURCE -> NodeType.SOURCE;
@@ -362,6 +359,6 @@ class WirelessDicegridConnection implements GridConnection {
 				throw new DeviceException.ProtocolError(deviceMAC, "invalid packet: expected load type to be SOURCE or LOAD");
 		};
 
-		return new NodeInfo(new NodeAddress(deviceMAC, id), nodeType, ownerID);
+		return new NodeInfo(new NodeAddress(deviceMAC, idx), nodeType, ownerID);
 	}
 }
