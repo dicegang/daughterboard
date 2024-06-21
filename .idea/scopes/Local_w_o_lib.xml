@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Local w/o lib" pattern="!file:.git/*&amp;&amp;!file:__pycache__/*&amp;&amp;!file:.git//*&amp;&amp;!file:__pycache__//*&amp;&amp;!ext:*/&amp;&amp;!file[firmware]:*&amp;&amp;!file[firmware]:*/&amp;&amp;!ext[Header Search Paths]:*/&amp;&amp;!file[board-firmware]:components//*&amp;&amp;!file[board-firmware]:components/bootloader//*&amp;&amp;!file[board-firmware]:components/bootloader/subproject//*&amp;&amp;!file[board-firmware]:components/bootloader/subproject/*&amp;&amp;!file[board-firmware]:*/&amp;&amp;!file[board-firmware]:components/bootloader/subproject/components/micro-ecc/micro-ecc//*||file[board-firmware]:common//*" />
+</component>

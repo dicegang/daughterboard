@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="WEB_MODULE" version="4">
+<module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
@@ -8,10 +8,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="pi4j-core" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="pi4j-library-pigpio" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="pi4j-plugin-pigpio" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="pi4j-plugin-raspberrypi" level="project" />
-    <orderEntry type="library" name="slf4j-api" level="project" />
+    <orderEntry type="library" name="pi4j" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="slf4j-api" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="slf4j-simple" level="project" />
   </component>
 </module>

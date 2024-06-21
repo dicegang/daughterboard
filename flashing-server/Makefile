@@ -19,11 +19,11 @@ bindings: comms_bindings protocol_bindings
 comms_bindings: dicegrid.flashing/gen/foundation/oned6/dicegrid/comms
 protocol_bindings: dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol
 
-dicegrid.flashing/gen/foundation/oned6/dicegrid/comms: comms.h
+dicegrid.flashing/gen/foundation/oned6/dicegrid/comms: ../common/comms.h
 	jextract $^  --output dicegrid.flashing/gen --target-package foundation.oned6.dicegrid.comms \
 				--include-struct comms_request  --include-struct comms_response
 
-dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol: protocol.h
+dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol: ../common/protocol.h
 	jextract $^ --output dicegrid.flashing/gen --target-package foundation.oned6.dicegrid.protocol \
 				--include-struct device_measurements --include-struct node_info --include-struct device_info \
 				--include-struct node_state --include-struct request_msg --include-struct response_msg  \

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakePythonSetting">
+    <option name="pythonIntegrationState" value="YES" />
+  </component>
+  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$/board-firmware">
+    <contentRoot DIR="$PROJECT_DIR$" />
+  </component>
+  <component name="CidrRootsConfiguration">
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/../esp/esp-idf" />
+    </libraryRoots>
+  </component>
+  <component name="JsBuildToolPackageJson" sorting="DEFINITION_ORDER" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_22_PREVIEW" project-jdk-name="22" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/flashing-server/out" />
+  </component>
+</project>

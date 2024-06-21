@@ -25,7 +25,7 @@ public record StatusMessageView(String operation, View inner, Status status) imp
 	}
 
 	public StatusMessageView(String operation, String message, Status status) {
-		this(operation, (message == null || message.isBlank()) ? View.blank() : View.hypertext("<p>" + message + "<p>"), status);
+		this(operation, message == null ? View.blank() : View.hypertext("<p>" + message + "</p>"), status);
 	}
 
 	@Override

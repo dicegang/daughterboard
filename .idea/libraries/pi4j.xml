@@ -1,0 +1,24 @@
+<component name="libraryTable">
+  <library name="pi4j">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-core.jar!/" />
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-plugin-raspberrypi.jar!/" />
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-plugin-pigpio.jar!/" />
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-library-pigpio.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-core-javadoc.jar!/" />
+    </JAVADOC>
+    <NATIVE>
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+      <root url="file://$PROJECT_DIR$/flashing-server/lib/pi4j" />
+    </NATIVE>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/pi4j/pi4j-core-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -97,7 +97,7 @@ public class DockerCompiler implements Compiler {
 			process.getOutputStream().close();
 
 			if (process.waitFor() != 0) {
-				throw new RuntimeException("Failed to build Docker image");
+				throw new IOException("Failed to build Docker image");
 			}
 
 			dockerImageBuilt = true;

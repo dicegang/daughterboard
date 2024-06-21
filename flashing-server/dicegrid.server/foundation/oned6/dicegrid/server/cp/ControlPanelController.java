@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static foundation.oned6.dicegrid.server.HTTPException.HTTPCode.*;
@@ -57,23 +58,31 @@ public class ControlPanelController extends ViewController {
 	}
 
 	private StatusMessageView handlePOST() throws HTTPException {
+		NodeInfo targetDevice = null;
 		String action = "";
-		NodeType targetDevice = null;
 
 		try {
 			var body = parsePOSTBody();
 			checkControlPermissions(body.targetTeam());
 
+			action = body.action();
 			var targetTeamNodes = getTeamNodes(body.targetTeam());
-			var targetNode = switch (body.nodeType()) {
+			targetDevice = switch (body.nodeType()) {
 				case SOURCE -> targetTeamNodes.source();
 				case LOAD -> targetTeamNodes.load();
 			};
 
-			performAction(action, targetNode);
-			return new StatusMessageView(action + " " + targetDevice, "", StatusMessageView.Status.SUCCESS);
+			performAction(action, targetDevice);
+			var message = (switch (action) {
+				case "engage" ->  "Your <strong>%s</strong> now <strong>ENGAGED</strong>";
+				case "disengage" -> "Your <strong>%s</strong> now <strong>DISENGAGED</strong>";
+				case "start" -> "Your <strong>%s</strong> is now <strong>DISENGAGED</strong>";
+				case "shutdown" -> "Your <strong>%s</strong> is now <strong>SHUTDOWN</strong>";
+				default -> throw new AssertionError();
+			}).formatted(targetDevice.nodeType().name());
+			return new StatusMessageView(action, message, StatusMessageView.Status.SUCCESS);
 		} catch (HTTPException e) {
-			throw StatusMessageView.wrapException(action + " " + targetDevice, e);
+			throw StatusMessageView.wrapException(action, e);
 		}
 	}
 
@@ -85,16 +94,18 @@ public class ControlPanelController extends ViewController {
 		}
 	}
 
+	private static final Pattern ACTION = Pattern.compile("(shutdown|start|engage|disengage)-(\\d+)-(source|load)");
+
 	private void performAction(String action, NodeInfo targetNode) throws HTTPException {
 		try {
 			switch (action) {
-				case "Engage" -> connection.setEngaged(targetNode.address(), true);
-				case "Disengage" -> connection.setEngaged(targetNode.address(), false);
-				case "Start" -> {
+				case "engage" -> connection.setEngaged(targetNode.address(), true);
+				case "disengage" -> connection.setEngaged(targetNode.address(), false);
+				case "start" -> {
 					connection.setEngaged(targetNode.address(), false);
 					connection.setShutdown(targetNode.address(), false);
 				}
-				case "Shutdown" -> connection.setShutdown(targetNode.address(), true);
+				case "shutdown" -> connection.setShutdown(targetNode.address(), true);
 				default -> throw HTTPException.withMessage("Invalid action", BAD_REQUEST);
 			}
 		} catch (DeviceException | InterruptedException e) {
@@ -109,13 +120,13 @@ public class ControlPanelController extends ViewController {
 			if (formValue == null)
 				throw HTTPException.of(BAD_REQUEST);
 
-			var parts = formValue.split("-");
-			if (parts.length != 3)
+			var matcher = ACTION.matcher(formValue);
+			if (!matcher.matches())
 				throw HTTPException.of(BAD_REQUEST);
 
-			var action = parts[0];
-			int targetTeam = requirePresent(tryParseInteger(parts[1]), BAD_REQUEST);
-			var targetDevice = switch (parts[2]) {
+			var action = matcher.group(1);
+			int targetTeam = requirePresent(tryParseInteger(matcher.group(2)), BAD_REQUEST);
+			var targetDevice = switch (matcher.group(3)) {
 				case "source" -> NodeType.SOURCE;
 				case "load" -> NodeType.LOAD;
 				default -> throw HTTPException.of(BAD_REQUEST);

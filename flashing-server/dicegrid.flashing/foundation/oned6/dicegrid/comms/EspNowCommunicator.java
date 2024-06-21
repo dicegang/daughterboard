@@ -2,11 +2,9 @@ package foundation.oned6.dicegrid.comms;
 
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
-import com.pi4j.io.gpio.digital.DigitalInput;
-import com.pi4j.io.gpio.digital.DigitalState;
-import com.pi4j.io.gpio.digital.DigitalStateChangeEvent;
-import com.pi4j.io.gpio.digital.DigitalStateChangeListener;
+import com.pi4j.io.gpio.digital.*;
 import com.pi4j.io.spi.Spi;
+import com.pi4j.io.spi.SpiChipSelect;
 import com.pi4j.io.spi.SpiConfigBuilder;
 
 import java.lang.foreign.Arena;
@@ -40,7 +38,8 @@ public class EspNowCommunicator implements AutoCloseable {
 		var spiConfig = SpiConfigBuilder.newInstance(context)
 			.baud(CLOCK_SPEED)
 			.bus(SLAVE_BUS)
-			.chipSelect(SS).build();
+			.chipSelect(SpiChipSelect.CS_0)
+			.build();
 
 		this.spi = context.spi().create(spiConfig);
 		spi.open();
@@ -69,14 +68,9 @@ public class EspNowCommunicator implements AutoCloseable {
 
 		try (var arena = Arena.ofConfined()) {
 			if (handshakeMISO.isOn()) {
-				var event = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS); // give it a chance to go low
-				if (event == null)
-					throw new IllegalStateException("handshake MISO is high when it shouldnt be");
-			}
-
-			byte[] b;
-			while ((b = spi.readNBytes(65535)).length != 0) {
-				logger.log(WARNING, "Discarding " + b.length + " garbage bytes in SPI buffer");
+//				var event = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS); // give it a chance to go low
+//				if (event == null)
+//					throw new IllegalStateException("handshake MISO is high when it shouldnt be");
 			}
 
 			var txBuf = arena.allocate(comms_request.layout());
@@ -85,7 +79,7 @@ public class EspNowCommunicator implements AutoCloseable {
 			comms_request.recipient(txBuf, MemorySegment.ofArray(deviceMAC));
 			comms_request.message_size(txBuf, (int) data.byteSize());
 
-			int result = spi.write(txBuf.asByteBuffer(), data.asByteBuffer());
+			int result = spi.write(txBuf.toArray(JAVA_BYTE), data.toArray(JAVA_BYTE));
 			assert result == txBuf.byteSize() + data.byteSize();
 
 			if (Thread.interrupted())
@@ -155,6 +149,7 @@ public class EspNowCommunicator implements AutoCloseable {
 	@Override
 	public void close() {
 		spi.close();
+		context.shutdown();
 	}
 
 	public record ReceivedMessage(byte[] mac, MemorySegment data) {
