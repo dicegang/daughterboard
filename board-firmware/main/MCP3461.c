@@ -44,7 +44,9 @@ typedef enum : uint8_t {
 	REG_SCAN = 0x07,
 	REG_TIMER = 0x08,
 	REG_OFFSETCAL = 0x09,
-	REG_GAINCAL = 0x0A
+	REG_GAINCAL = 0x0A,
+	REG_LOCK = 0xD,
+	REG_CRCCFG = 0xF,
 } mcp3461_register;
 
 typedef struct __attribute__((packed)) {
@@ -253,10 +255,32 @@ static esp_err_t mcp3461_reset(mcp3461_device_t *h) {
 esp_err_t mcp3461_init(mcp3461_device_t *h) {
 	esp_err_t ret = ESP_OK;
 
+	// reset sequence from §5.10.1
+
+	if ((ret = write_reg_int(h, REG_LOCK, 0xa5, 8)) != ESP_OK) {
+		goto done;
+	}
+
+	if ((ret = write_reg_int(h, REG_IRQ, 0x03, 8)) != ESP_OK) {
+		goto done;
+	}
+
 	if ((ret = mcp3461_reset(h)) != ESP_OK) {
 		goto done;
 	}
 
+	// Baseline configuration
+
+	// select internal clock and 0.9uA bias, other settings at defaults
+	if ((ret = write_reg_int(h, REG_CONFIG0,
+	                         adc_config0(MCP3461_ADC_MODE_SHUTDOWN,
+	                                     MCP3461_ADC_BIAS_0p9uA, true,
+	                                     MCP3461_CLK_SEL_INTERNAL, true),
+	                         8)) != ESP_OK) {
+		goto done;
+	}
+
+	// Set output format and conversion mode
 	if ((ret = write_reg_int(h, REG_CONFIG3,
 	                         adc_config3(MCP3461_CONV_CONTINUOUS, 0, 0), 8)) !=
 	    ESP_OK) {
