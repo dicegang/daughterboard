@@ -82,7 +82,7 @@ static esp_err_t isp_spi_begin(struct node_spi_config const *config, spi_session
 			.dummy_bits = 0,
 			.mode = 0,
 			.clock_source = SPI_CLK_SRC_DEFAULT,
-			.clock_speed_hz = 1000000 / 6,
+			.clock_speed_hz = 1000000 / 12,
 			.spics_io_num = config->ss_attiny,
 			.queue_size = 1,
 	};
@@ -242,6 +242,7 @@ static bool isp_spi_program(spi_session const *session) {
 		ESP_LOGE(TAG, "isp_spi_program: could not transmit to device: %s", esp_err_to_name(result));
 		return false;
 	}
+	ESP_LOGI(TAG, "Sync response: %02x", transaction.base.rx_data[0]);
 
 	return transaction.base.rx_data[0] == 0x53;
 }
@@ -363,15 +364,16 @@ esp_err_t program(struct node_spi_config *spi_config, size_t chunks, struct chun
 	if ((result = isp_spi_begin(spi_config, &session)) != ESP_OK) {
 		return result;
 	}
+	gpio_set_level(spi_config->ss_attiny, 0);
+	gpio_set_level(spi_config->rst_attiny, 0);
 
 	for (;;) {
-		gpio_set_level(spi_config->ss_attiny, 0);
 		DELAY_MS(20);
-//		gpio_set_level(spi_config->ss_attiny, 1);
+		gpio_set_level(spi_config->rst_attiny, 1);
 		// Pulse must be minimum 2 target CPU clock cycles so 100 usec is ok for CPU
 		// speeds above 20 KHz
 		DELAY_US(100);
-		gpio_set_level(spi_config->ss_attiny, 0);
+		gpio_set_level(spi_config->rst_attiny, 0);
 		DELAY_MS(50);
 
 		if (isp_spi_program(&session)) {
@@ -396,7 +398,16 @@ esp_err_t program(struct node_spi_config *spi_config, size_t chunks, struct chun
 
 
 	done:
+	gpio_set_level(spi_config->rst_attiny, 1);
+	gpio_set_level(spi_config->ss_attiny, 1);
 	isp_spi_end(&session);
 	flash_list_free(&list);
+
+	DELAY_MS(10);
+	gpio_set_level(spi_config->rst_attiny, 0);
+	DELAY_MS(1);
+	gpio_set_level(spi_config->rst_attiny, 1);
+	DELAY_MS(100);
+
 	return result;
 }

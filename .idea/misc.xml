@@ -3,7 +3,7 @@
   <component name="CMakePythonSetting">
     <option name="pythonIntegrationState" value="YES" />
   </component>
-  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$/board-firmware">
+  <component name="CMakeWorkspace">
     <contentRoot DIR="$PROJECT_DIR$" />
   </component>
   <component name="CidrRootsConfiguration">
@@ -11,8 +11,23 @@
       <file path="$PROJECT_DIR$/../esp/esp-idf" />
     </libraryRoots>
   </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="JsBuildToolPackageJson" sorting="DEFINITION_ORDER" />
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_22_PREVIEW" project-jdk-name="22" project-jdk-type="JavaSDK">
-    <output url="file://$PROJECT_DIR$/flashing-server/out" />
+  <component name="MakefileSettings">
+    <option name="linkedExternalProjectsSettings">
+      <MakefileProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/attiny84-spi-test" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/attiny84-spi-test" />
+          </set>
+        </option>
+        <option name="version" value="2" />
+      </MakefileProjectSettings>
+    </option>
   </component>
+  <component name="MakefileWorkspace" PROJECT_DIR="$PROJECT_DIR$/attiny84-spi-test">
+    <contentRoot DIR="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="22" project-jdk-type="JavaSDK" />
 </project>

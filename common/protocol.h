@@ -45,14 +45,10 @@ struct node_info {
 };
 
 struct node_spi_config {
-	enum { NODE_HSPI = 1, NODE_VSPI = 2 } spi_attiny, spi_adc, spi_sr;
-	uint8_t ss_attiny, ss_adc, ss_sr;
+	enum { SPI_SIDE_1 = 1, SPI_SIDE_2 = 2 } spi_attiny;
+	uint8_t ss_attiny, rst_attiny;
 
-	uint8_t shutdown_pin_sr, engaged_pin_sr;
-
-	enum {
-		ADC_CHAN_01, ADC_CHAN_23, ADC_CHAN_45, ADC_CHAN_67
-	} adc_chan;
+	uint8_t shutdown_pin, engaged_pin;
 };
 
 struct device_configuration {

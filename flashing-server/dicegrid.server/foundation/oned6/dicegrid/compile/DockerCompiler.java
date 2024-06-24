@@ -22,10 +22,11 @@ public class DockerCompiler implements Compiler {
 			var binds = Map.of(tempDir.path(), Path.of("/build"));
 			Files.writeString(tempDir.path().resolve("program.c"), code);
 
-			output += runCommandInDocker(binds, "avr-gcc", "-Wall", "-Os", "-DF_CPU=8000000", "-mmcu=attiny85", "-c", "program.c", "-o", "program.o");
-			output += runCommandInDocker(binds, "avr-gcc", "-Wall", "-Os", "-DF_CPU=8000000", "-mmcu=attiny85", "-o", "program.elf", "program.o");
+			output += runCommandInDocker(binds, "avr-gcc", "-Wall", "-Os", "-DF_CPU=8000000", "-mmcu=attiny84", "-c", "program.c", "-o", "program.o");
+			output += runCommandInDocker(binds, "avr-gcc", "-Wall", "-Os", "-DF_CPU=8000000", "-mmcu=attiny84", "-o", "program.elf", "program.o");
 			output += runCommandInDocker(binds, "avr-objcopy", "-j", ".text", "-j", ".data", "-O", "ihex", "program.elf", "program.hex");
 			output += runCommandInDocker(binds, "avr-size","program.elf");
+
 
 			return new CompileResult(Files.readAllBytes(tempDir.path().resolve("program.hex")), output);
 		} catch (IOException e) {

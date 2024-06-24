@@ -1,6 +1,6 @@
 .PHONY: clean build_java
 
-LIBS=$(subst $(subst ,, ),:,$(wildcard pi4j-2.6.0/lib/*.jar))
+LIBS=$(subst $(subst ,, ),:,$(wildcard lib/pi4j/*.jar))
 
 all: out/dist/dicegrid.flashing.jar
 
@@ -21,7 +21,7 @@ protocol_bindings: dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol
 
 dicegrid.flashing/gen/foundation/oned6/dicegrid/comms: ../common/comms.h
 	jextract $^  --output dicegrid.flashing/gen --target-package foundation.oned6.dicegrid.comms \
-				--include-struct comms_request  --include-struct comms_response
+				--include-struct comms_request  --include-struct comms_message --include-constant SYNC_SEQUENCE
 
 dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol: ../common/protocol.h
 	jextract $^ --output dicegrid.flashing/gen --target-package foundation.oned6.dicegrid.protocol \
@@ -31,7 +31,7 @@ dicegrid.flashing/gen/foundation/oned6/dicegrid/protocol: ../common/protocol.h
 				--include-constant FLASH_BEGIN --include-constant FLASH_DATA --include-constant FLASH_DATA_END \
 				--include-constant CONFIGURE_SHUTDOWN --include-constant CONFIGURE_ENGAGEMENT --include-constant NODE_STATE \
 				--include-constant SCAN --include-constant SET_NODE_INFO --include-constant MAX_CHUNK_SIZE \
-				--include-struct bitbang_spi_config
+				--include-struct bitbang_spi_config --include-struct device_configuration --include-struct node_spi_config
 
 clean:
 	rm -rf out/

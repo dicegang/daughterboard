@@ -79,7 +79,7 @@ public class UpdateProgramController extends HypertextResponseController {
 		repository.setFlashCompilerOutput(job, compiled.compileLog(), compiled.hex());
 		if (compiled.hex() == null) {
 			setStatus(job, BUILD_FAILED);
-			return;
+			throw new HTTPException("Compilation failed: " + compiled.compileLog(), BAD_REQUEST);
 		}
 
 		setStatus(job, QUEUED);

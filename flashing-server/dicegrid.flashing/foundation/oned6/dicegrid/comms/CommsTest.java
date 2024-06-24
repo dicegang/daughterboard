@@ -1,11 +1,11 @@
 package foundation.oned6.dicegrid.comms;
 
-import java.lang.foreign.MemorySegment;
+import foundation.oned6.dicegrid.protocol.GridConnection;
 
 public class CommsTest {
 	public static void main(String[] args) throws InterruptedException {
-		try (var c = new EspNowCommunicator()){
-			c.ping();
+		try (var c = GridConnection.create()) {
+			System.out.println(c.scan());
 		}
 	}
 }

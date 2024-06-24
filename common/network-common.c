@@ -56,7 +56,7 @@ void recv_cb(struct esp_now_recv_info const *info, const uint8_t *data, int len)
 		esp_now_add_peer(&peer_info);
 	}
 
-	recv_packet_t *recv_packet = malloc(sizeof(recv_packet_t));
+	recv_packet_t *recv_packet = calloc(sizeof(recv_packet_t), 1);
 	if (recv_packet == NULL) {
 		ESP_LOGE(TAG, "Failed to allocate memory for recv_packet");
 		return;

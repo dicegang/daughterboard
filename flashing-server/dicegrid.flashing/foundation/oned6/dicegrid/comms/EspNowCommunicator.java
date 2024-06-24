@@ -1,5 +1,8 @@
 package foundation.oned6.dicegrid.comms;
 
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
 import com.pi4j.io.gpio.digital.*;
@@ -9,10 +12,15 @@ import com.pi4j.io.spi.SpiConfigBuilder;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static foundation.oned6.dicegrid.comms.SlaveConfig.*;
@@ -23,26 +31,34 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class EspNowCommunicator implements AutoCloseable {
 	private static final Duration RESPONSE_TIMEOUT = Duration.ofMillis(300);
-	private static final Context context = Pi4J.newAutoContext();
-
 	private final System.Logger logger = System.getLogger(EspNowCommunicator.class.getSimpleName());
-	private final Spi spi;
+	private final SerialPort serialPort = SerialPort.getCommPort("/dev/cu.usbmodemT14XYIYUGUMV53");
 
-	private final DigitalInput handshakeMISO;
 
 	private final ReentrantLock lock = new ReentrantLock();
+	private final Condition condition = lock.newCondition();
 
 	public EspNowCommunicator() {
-		this.handshakeMISO = context.din().create(MISO_HANDSHAKE_GPIO);
+		serialPort.openPort();
+		serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 100, 0);
 
-		var spiConfig = SpiConfigBuilder.newInstance(context)
-			.baud(CLOCK_SPEED)
-			.bus(SLAVE_BUS)
-			.chipSelect(SpiChipSelect.CS_0)
-			.build();
+		serialPort.setBaudRate(115200);
+		serialPort.addDataListener(new SerialPortDataListener() {
+			@Override
+			public int getListeningEvents() {
+				return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+			}
 
-		this.spi = context.spi().create(spiConfig);
-		spi.open();
+			@Override
+			public void serialEvent(SerialPortEvent event) {
+				lock.lock();
+				try {
+					condition.signalAll();
+				} finally {
+					lock.unlock();
+				}
+			}
+		});
 	}
 
 	public ReceivedMessage[] send(byte[] deviceMAC, MemorySegment data) throws InterruptedException {
@@ -55,101 +71,54 @@ public class EspNowCommunicator implements AutoCloseable {
 
 	public void ping() throws InterruptedException {
 		var result = send(comms_h.COMMS_REQ_HELLO(), new byte[6], MemorySegment.NULL);
-		if (result.length != 0)
+		if (result.length != 1 || result[0].data.byteSize() != 0 || !Arrays.equals(result[0].mac, new byte[6]))
 			logger.log(WARNING, "unexpected response to hello: " + Arrays.toString(result));
 	}
 
 	private ReceivedMessage[] send(int messageType, byte[] deviceMAC, MemorySegment data) throws InterruptedException {
 		lock.lockInterruptibly();
 
-		var handshakeMISOEvents = new ArrayBlockingQueue<DigitalStateChangeEvent<?>>(5);
-		DigitalStateChangeListener listener = handshakeMISOEvents::add;
-		handshakeMISO.addListener(listener);
-
 		try (var arena = Arena.ofConfined()) {
-			if (handshakeMISO.isOn()) {
-//				var event = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS); // give it a chance to go low
-//				if (event == null)
-//					throw new IllegalStateException("handshake MISO is high when it shouldnt be");
-			}
-
 			var txBuf = arena.allocate(comms_request.layout());
 
 			comms_request.type(txBuf, messageType);
 			comms_request.recipient(txBuf, MemorySegment.ofArray(deviceMAC));
 			comms_request.message_size(txBuf, (int) data.byteSize());
 
-			int result = spi.write(txBuf.toArray(JAVA_BYTE), data.toArray(JAVA_BYTE));
-			assert result == txBuf.byteSize() + data.byteSize();
+			serialPort.writeBytes(txBuf.toArray(JAVA_BYTE), (int) txBuf.byteSize());
+			serialPort.writeBytes(data.toArray(JAVA_BYTE), (int) data.byteSize());
 
 			if (Thread.interrupted())
 				throw new InterruptedException();
 
-			var response = readWithHandshake(handshakeMISOEvents, arena);
-			return parseResponse(response);
+			var result = new ArrayList<ReceivedMessage>();
+
+			var end = Instant.now().plus(RESPONSE_TIMEOUT);
+			while (Instant.now().isBefore(end)) {
+				byte[] sender = new byte[6];
+				byte[] size = new byte[4];
+
+				if (serialPort.readBytes(sender, 6) != 6)
+					continue;
+
+				serialPort.readBytes(size, 4);
+
+				var sizeInt = ByteBuffer.wrap(size).order(ByteOrder.LITTLE_ENDIAN).getInt();
+				var msg = new byte[sizeInt];
+				serialPort.readBytes(msg, sizeInt);
+
+				result.add(new ReceivedMessage(sender, MemorySegment.ofArray(msg)));
+			}
+
+			return result.toArray(ReceivedMessage[]::new);
 		} finally {
-			handshakeMISO.removeListener(listener);
 			lock.unlock();
 		}
 	}
 
-	private MemorySegment readWithHandshake(ArrayBlockingQueue<DigitalStateChangeEvent<?>> handshakeMISOEvents, Arena arena) throws InterruptedException {
-		var highEvent = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-		if (highEvent == null)
-			throw new IllegalStateException("timeout waiting for handshake to go high");
-
-		if (highEvent.state() != DigitalState.HIGH)
-			throw new IllegalStateException("this should not happen?");
-
-
-		var lowEvent = handshakeMISOEvents.poll(RESPONSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-		if (lowEvent == null)
-			throw new IllegalStateException("timeout waiting for handshake to go low");
-
-		if (lowEvent.state() != DigitalState.LOW)
-			throw new IllegalStateException("this should not happen?");
-
-		Thread.sleep(5); // give some time to let linux get its shit together
-
-		int responseTotalSize = MemorySegment.ofArray(spi.readNBytes(4)).get(JAVA_INT, 0);
-		var buffer = arena.allocate(responseTotalSize);
-		comms_response.total_size(buffer, responseTotalSize);
-
-		int read = spi.read(buffer.asSlice(comms_response.total_size$layout().byteSize()).asByteBuffer());
-		assert read == responseTotalSize - 4;
-
-		if (Thread.interrupted())
-			throw new InterruptedException();
-
-		return buffer;
-	}
-
-	private ReceivedMessage[] parseResponse(MemorySegment response) {
-		var result = new ReceivedMessage[comms_response.message_count(response)];
-		var messages = response.asSlice(comms_response.messages$offset());
-
-		int totalSize = comms_response.total_size(response);
-		long offset = comms_response.messages$offset();
-		for (int i = 0; i < result.length; i++) {
-			var message = messages.asSlice(offset, comms_response.messages.layout());
-
-			var mac = comms_response.messages.sender(message);
-			var messageSize = comms_response.messages.message_size(message);
-			var data = messages.asSlice(offset + comms_response.sizeof(), messageSize);
-
-			result[i] = new ReceivedMessage(mac.toArray(JAVA_BYTE), data);
-			offset += comms_response.sizeof() + messageSize;
-		}
-
-		assert offset == totalSize;
-
-		return result;
-	}
-
 	@Override
 	public void close() {
-		spi.close();
-		context.shutdown();
+		serialPort.closePort();
 	}
 
 	public record ReceivedMessage(byte[] mac, MemorySegment data) {
