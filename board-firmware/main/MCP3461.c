@@ -74,7 +74,6 @@ esp_err_t mcp3461_create(mcp3461_device_t *h, spi_host_device_t host_id,
 		goto done;
 	}
 
-	memset(h, 0, sizeof(*h));
 	h->device_address = device_address;
 
 done:
