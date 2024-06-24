@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="jSerialComm-2.11.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/flashing-server/lib/jSerialComm-2.11.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ideaLibSources/jSerialComm-2.11.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,5 @@
+rm tower.p12
+keytool -genkeypair -keyalg EC -keystore tower.p12 -alias kp -dname "CN=Tower, O=1D6 Foundation, OU=DiceCTF Finals 2024" -storepass 'j*E[OJ92)EUQG1`<DMo-LgC)l'
+./sign_cert_operator tower.p12 'j*E[OJ92)EUQG1`<DMo-LgC)l' kp
+openssl pkcs12 -in tower.p12 -nodes -nokeys -passin 'pass:j*E[OJ92)EUQG1`<DMo-LgC)l' -chain | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > ../board-firmware/main/certs/tower.crt
+openssl pkcs12 -in tower.p12 -nodes -nocerts -passin 'pass:j*E[OJ92)EUQG1`<DMo-LgC)l' | sed -ne '/-BEGIN PRIVATE KEY-/,/-END PRIVATE KEY-/p' > ../board-firmware/main/certs/tower.pem

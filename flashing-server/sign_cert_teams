@@ -1,0 +1,20 @@
+#!/bin/sh
+
+PAIR=$1
+PASS=$2
+ALIAS=$3
+
+ROOT_PEM=`mktemp`
+CA_PEM=`mktemp`
+CHAIN_PEM=`mktemp`
+
+keytool -keystore root.p12 -exportcert -storepass "$PASS" -alias root -rfc > $ROOT_PEM
+keytool -keystore teams.p12 -exportcert -storepass "$PASS" -alias kp -rfc > $CA_PEM
+
+CSR=`mktemp`
+CERT_PEM=`mktemp`
+keytool -storepass "$PASS" -keystore $PAIR -certreq -keyalg EC -alias $ALIAS > $CSR
+keytool -storepass "$PASS" -keystore teams.p12 -gencert -keyalg EC -alias kp -rfc < $CSR > $CERT_PEM
+
+cat $ROOT_PEM $CA_PEM $CERT_PEM > $CHAIN_PEM
+keytool -keystore $PAIR -storepass "$PASS" -import -trustcacerts -file $CHAIN_PEM -alias kp -rfc

@@ -1,0 +1,18 @@
+#!/bin/sh
+
+PAIR=$1
+PASS=$2
+ALIAS=$3
+
+ROOT_PEM=`mktemp`
+CHAIN_PEM=`mktemp`
+
+keytool -keystore root.p12 -exportcert -storepass "$PASS" -alias root -rfc > $ROOT_PEM
+
+CSR=`mktemp`
+CERT_PEM=`mktemp`
+keytool -storepass "$PASS" -keystore $PAIR -certreq -keyalg EC -alias $ALIAS  -ext bc:c > $CSR
+keytool -storepass "$PASS" -keystore root.p12 -gencert -keyalg EC -alias root -ext bc:c -rfc < $CSR > $CERT_PEM
+
+cat $ROOT_PEM $CERT_PEM > $CHAIN_PEM
+keytool -keystore $PAIR -storepass "$PASS" -import -trustcacerts -file $CHAIN_PEM -alias kp -rfc
