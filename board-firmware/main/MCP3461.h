@@ -144,7 +144,7 @@ inline uint8_t adc_config2(adc_gain gain) {
 inline uint8_t adc_config3(conv_mode conv_mode, bool offset_cal,
                            bool gain_cal) {
 	// DATA_FORMAT set to 0b11 (17 bits + channel ID)
-	return (conv_mode << 7) | (0b11 << 5) | (offset_cal << 1) | gain_cal;
+	return (conv_mode << 6) | (0b11 << 4) | (offset_cal << 1) | gain_cal;
 }
 
 inline uint8_t adc_mux(mux_pin plus, mux_pin minus) {
