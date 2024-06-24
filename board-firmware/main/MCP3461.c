@@ -228,7 +228,7 @@ static esp_err_t do_fast_cmd(const mcp3461_device_t *h,
 	esp_err_t ret = ESP_OK;
 
 	command_byte_t command_byte = empty_command_byte(h);
-	command_byte.type = COMMAND_TYPE_INC_READ;
+	command_byte.type = COMMAND_TYPE_FAST;
 	command_byte.reg_addr_or_fast_cmd = command;
 	spi_transaction_t transaction = {
 		.length = 0,
