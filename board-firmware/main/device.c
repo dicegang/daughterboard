@@ -51,7 +51,7 @@ static void set_pin_shift_register(struct node_spi_config const *config, uint8_t
 	xSemaphoreGive(&pin_lock);
 }
 
-void device_init() {
+void device_init(void) {
 	pin_lock = xSemaphoreCreateMutexStatic(&pin_lock_);
 }
 

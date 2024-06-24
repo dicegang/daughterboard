@@ -28,7 +28,7 @@ typedef struct {
 	union msg data;
 } recv_packet_t;
 
-void init_espnow();
+void init_espnow(void);
 esp_err_t send_msg(bool encrypt, uint8_t destination_mac[ESP_NOW_ETH_ALEN], union msg *message);
 void receive_msg(recv_packet_t **receive_packet);
 bool receive_msg_until(recv_packet_t **receive_packet, TickType_t duration);

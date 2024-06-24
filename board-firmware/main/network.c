@@ -26,7 +26,7 @@ esp_interface_t my_interface = MY_ESPNOW_WIFI_IF;
 StaticQueue_t s_recv_queue_buffer;
 uint8_t queue_storage[4 * sizeof(recv_packet_t *)];
 
-void init_espnow() {
+void init_espnow(void) {
 	s_recv_queue = xQueueCreateStatic(4, sizeof(recv_packet_t*), &queue_storage[0], &s_recv_queue_buffer);
 	s_evt_group = xEventGroupCreate();
 

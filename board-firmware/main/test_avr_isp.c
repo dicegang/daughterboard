@@ -11,7 +11,7 @@
 #include <driver/spi_master.h>
 #include <driver/gpio.h>
 
-uint8_t *parse_hex_string(char const *hex_string) {
+static uint8_t *parse_hex_string(char const *hex_string) {
 	size_t len = strlen(hex_string);
 	assert(!(len % 2));
 
@@ -30,6 +30,9 @@ uint8_t *parse_hex_string(char const *hex_string) {
 static uint32_t btog(uint32_t num) {
 	return (num >> 1) ^ num;
 }
+
+// prototype because for some reason ESP-IDF does not ship one in *any* header
+void app_main(void);
 
 void app_main(void) {
 //	esp_log_level_set("avrisp", ESP_LOG_VERBOSE);

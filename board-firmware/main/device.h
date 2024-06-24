@@ -13,7 +13,7 @@
 
 #define SHIFT_REGISTER_ADDRESS 0x00
 
-void device_init();
+void device_init(void);
 esp_err_t set_shutdown(struct node_spi_config const *config, bool shutdown);
 esp_err_t set_engaged(struct node_spi_config const *config, bool engaged);
 esp_err_t read_state(struct node_spi_config const *config, struct node_state *state);
