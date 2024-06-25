@@ -174,6 +174,9 @@ static esp_err_t handle_scan(struct scan_req const *req, struct response_msg *ma
 	return ESP_OK;
 }
 
+// prototype because for some reason ESP-IDF does not ship one in *any* header
+void app_main(void);
+
 void app_main(void) {
 	init_espnow();
 
