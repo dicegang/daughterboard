@@ -94,7 +94,7 @@ typedef enum {
 } mux_pin;
 
 #define __BIT(n) (1 << (n))
-typedef enum {
+typedef enum __attribute__((packed)) {
 	MCP3461_CHAN_CH0 = __BIT(0b0000),
 	MCP3461_CHAN_CH1 = __BIT(0b0001),
 	MCP3461_CHAN_CH2 = __BIT(0b0010),
@@ -114,7 +114,18 @@ typedef enum {
 	MCP3461_CHAN_VCM = __BIT(0b1110),
 	MCP3461_CHAN_OFF = __BIT(0b1111)
 } scan_chan;
+static_assert(sizeof(scan_chan) == 2, "scan_chan size");
 #undef __BIT
+
+typedef struct __attribute__((packed)) {
+	bool por_status_n : 1;
+	bool crccfg_status_n : 1;
+	bool dr_status_n : 1;
+	bool dev_addr_0_n : 1;
+	uint8_t dev_addr : 2;
+	uint8_t reserved_0 : 2;
+} mcp3461_status;
+static_assert(sizeof(mcp3461_status) == 1, "STATUS register size");
 
 typedef struct __attribute__((packed)) {
 	adc_mode mode : 2;
@@ -144,7 +155,7 @@ inline uint8_t adc_config2(adc_gain gain) {
 inline uint8_t adc_config3(conv_mode conv_mode, bool offset_cal,
                            bool gain_cal) {
 	// DATA_FORMAT set to 0b11 (17 bits + channel ID)
-	return (conv_mode << 7) | (0b11 << 5) | (offset_cal << 1) | gain_cal;
+	return (conv_mode << 6) | (0b11 << 4) | (offset_cal << 1) | gain_cal;
 }
 
 inline uint8_t adc_mux(mux_pin plus, mux_pin minus) {
@@ -233,7 +244,9 @@ static_assert(sizeof(mcp3461_read_data_t) == 4, "packing");
 /// Reads the current data value in the device's output register.
 ///
 /// @param h Device handle
-esp_err_t mcp3461_read(mcp3461_device_t *h, mcp3461_read_data_t *out);
+/// @param out Output data
+/// @param status Output status (may be NULL)
+esp_err_t mcp3461_read(mcp3461_device_t *h, mcp3461_read_data_t *out, mcp3461_status *status);
 
 #ifdef __cplusplus
 } // extern "C"
