@@ -162,7 +162,7 @@ void example_connect(void)
 #define NGX_UNESCAPE_REDIRECT     (2)
 
 
-uintptr_t ngx_escape_uri(u_char *dst, u_char *src, size_t size, unsigned int type)
+static uintptr_t ngx_escape_uri(u_char *dst, u_char *src, size_t size, unsigned int type)
 {
 	unsigned int      n;
 	uint32_t       *escape;
@@ -343,7 +343,7 @@ uintptr_t ngx_escape_uri(u_char *dst, u_char *src, size_t size, unsigned int typ
 }
 
 
-void ngx_unescape_uri(u_char **dst, u_char **src, size_t size, unsigned int type)
+static void ngx_unescape_uri(u_char **dst, u_char **src, size_t size, unsigned int type)
 {
 	u_char  *d, *s, ch, c, decoded;
 	enum {
@@ -471,15 +471,15 @@ void ngx_unescape_uri(u_char **dst, u_char **src, size_t size, unsigned int type
 }
 
 
-uint32_t example_uri_encode(char *dest, const char *src, size_t len)
-{
-	if (!src || !dest) {
-		return 0;
-	}
-
-	uintptr_t ret = ngx_escape_uri((unsigned char *)dest, (unsigned char *)src, len, NGX_ESCAPE_URI_COMPONENT);
-	return (uint32_t)(ret - (uintptr_t)dest);
-}
+//uint32_t example_uri_encode(char *dest, const char *src, size_t len)
+//{
+//	if (!src || !dest) {
+//		return 0;
+//	}
+//
+//	uintptr_t ret = ngx_escape_uri((unsigned char *)dest, (unsigned char *)src, len, NGX_ESCAPE_URI_COMPONENT);
+//	return (uint32_t)(ret - (uintptr_t)dest);
+//}
 
 
 void example_uri_decode(char *dest, const char *src, size_t len)

@@ -7,11 +7,17 @@
 #define MAX_CHUNK_SIZE 16
 #define MAX_NODES 4
 
-struct node_state {
-    bool shutdown;
-    bool engaged;
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+#define CONSISTENT _Atomic
+#else
+#define CONSISTENT
+#endif
 
-    enum {
+struct node_state {
+    CONSISTENT bool shutdown;
+	CONSISTENT bool engaged;
+
+	CONSISTENT enum trip_reason {
     	TRIP_REASON_NONE,
     	TRIP_REASON_OVERCURRENT,
     	TRIP_REASON_OVERVOLTAGE,
@@ -20,20 +26,20 @@ struct node_state {
     	TRIP_REASON_MANUAL
     } trip_reason;
 
-    double current_rms_inner;
-    double current_rms_outer;
-    double voltage_rms;
+    CONSISTENT double current_rms_inner;
+    CONSISTENT double current_rms_outer;
+    CONSISTENT double voltage_rms;
 
-    double current_freq_inner;
-    double current_freq_outer;
-    double voltage_freq;
+    CONSISTENT double current_freq_inner;
+    CONSISTENT double current_freq_outer;
+    CONSISTENT double voltage_freq;
 
-    double phase_angle;
-    double currents_angle;
+    CONSISTENT double phase_angle;
+    CONSISTENT double currents_angle;
 
-    double current_thd_inner;
-    double current_thd_outer;
-    double voltage_thd;
+    CONSISTENT double current_thd_inner;
+    CONSISTENT double current_thd_outer;
+    CONSISTENT double voltage_thd;
 };
 
 struct node_info {

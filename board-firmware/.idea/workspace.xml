@@ -3,9 +3,9 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakePresetLoader"><![CDATA[{
-  "useNewFormat": true
-}]]></component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
   <component name="CMakeReloadState">
     <option name="reloaded" value="true" />
   </component>
@@ -151,7 +151,25 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="af6d8c61-f39f-4d73-86e8-cd96ece2e377" name="Changes" comment="Fix bugs in adc driver" />
+    <list default="true" id="af6d8c61-f39f-4d73-86e8-cd96ece2e377" name="Changes" comment="Fix bugs in adc driver">
+      <change afterPath="$PROJECT_DIR$/main/measurements.c" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main/measurements.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main/watchdog.c" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main/watchdog.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/main/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/app.c" beforeDir="false" afterPath="$PROJECT_DIR$/main/app.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/app_wifi.c" beforeDir="false" afterPath="$PROJECT_DIR$/main/app_wifi.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/device.c" beforeDir="false" afterPath="$PROJECT_DIR$/main/management.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/device.h" beforeDir="false" afterPath="$PROJECT_DIR$/main/management.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/io.h" beforeDir="false" afterPath="$PROJECT_DIR$/main/io.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/wifi.c" beforeDir="false" afterPath="$PROJECT_DIR$/main/wifi.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sdkconfig" beforeDir="false" afterPath="$PROJECT_DIR$/sdkconfig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sdkconfig.old" beforeDir="false" afterPath="$PROJECT_DIR$/sdkconfig.old" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../common/protocol.h" beforeDir="false" afterPath="$PROJECT_DIR$/../common/protocol.h" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -170,10 +188,10 @@
     <option name="minorVersion" value="1.4" />
     <option name="productBranch" value="Classic" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 8
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
   <component name="ProjectId" id="2iIn0OxPd4Lc4YQxLKkqLcBF9yr" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -188,7 +206,7 @@
     "cf.advertisement.text.has.clang-format": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "adc-driver",
+    "git-widget-placeholder": "board-wifi",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -1060,5 +1078,16 @@
     <MESSAGE value="Remove unneeded memset that messes up device struct" />
     <MESSAGE value="Fix bugs in adc driver" />
     <option name="LAST_COMMIT_MESSAGE" value="Fix bugs in adc driver" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/main/measurements.c</url>
+          <line>36</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

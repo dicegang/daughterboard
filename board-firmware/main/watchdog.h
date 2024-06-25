@@ -1,0 +1,6 @@
+#ifndef BOARD_FIRMWARE_WATCHDOG_H
+#define BOARD_FIRMWARE_WATCHDOG_H
+
+void watchdog_loop(void);
+
+#endif //BOARD_FIRMWARE_WATCHDOG_H

@@ -8,7 +8,7 @@
 #include "crc8.h"
 #include "avrisp.h"
 #include "node_config.h"
-#include "device.h"
+#include "management.h"
 
 #define TAG "device.c"
 
